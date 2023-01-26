@@ -3,29 +3,29 @@ package sub
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/zoetrope/kubbernecker/pkg"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 )
 
 type watchOptions struct {
+	*rootOpts
+
 	resources     []string
 	allNamespaces bool
 	allResources  bool
 
-	streams  genericclioptions.IOStreams
-	config   *genericclioptions.ConfigFlags
 	kube     *pkg.KubeClient
 	watchers []*pkg.Watcher
 }
 
-func newWatchCmd(streams genericclioptions.IOStreams, config *genericclioptions.ConfigFlags) *cobra.Command {
-	opts := &watchOptions{}
+func newWatchCmd(parentOpts *rootOpts) *cobra.Command {
+	opts := &watchOptions{
+		rootOpts: parentOpts,
+	}
 
 	cmd := &cobra.Command{
 		Use:   "watch",
@@ -37,12 +37,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return nil
+			return opts.Fill(cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := opts.Fill(streams, config, args); err != nil {
-				return err
-			}
 			return opts.Run(cmd.Context())
 		},
 	}
@@ -53,11 +50,8 @@ to quickly create a Cobra application.`,
 	return cmd
 }
 
-func (o *watchOptions) Fill(streams genericclioptions.IOStreams, config *genericclioptions.ConfigFlags, args []string) error {
-	o.config = config
-	o.streams = streams
-
-	kube, err := pkg.MakeKubeClient(config, o.allNamespaces)
+func (o *watchOptions) Fill(cmd *cobra.Command, args []string) error {
+	kube, err := pkg.MakeKubeClient(o.config, o.allNamespaces)
 	if err != nil {
 		return err
 	}
@@ -209,34 +203,10 @@ func (o *watchOptions) isExcludedResource(gvk schema.GroupVersionKind) bool {
 }
 
 func (o *watchOptions) detectGVK(arg string) (*schema.GroupVersionKind, error) {
-	gvk := schema.GroupVersionKind{}
-	var err error
-
-	gvr, gr := schema.ParseResourceArg(arg)
-	if gvr != nil {
-		gvk, err = o.kube.Mapper.KindFor(*gvr)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if gvk.Empty() {
-		gvk, err = o.kube.Mapper.KindFor(gr.WithVersion(""))
-		if err != nil {
-			return nil, err
-		}
-	}
-	if !gvk.Empty() {
-		return &gvk, nil
-	}
-
-	gvk2, gk := schema.ParseKindArg(arg)
-	if gvk2 != nil {
-		gvk = gk.WithVersion("")
-	} else {
-		gvk = *gvk2
-	}
-	if gvk.Empty() {
-		return nil, fmt.Errorf("failed to detect GroupVersionKind: %s", arg)
+	gr := schema.ParseGroupResource(arg)
+	gvk, err := o.kube.Mapper.KindFor(gr.WithVersion(""))
+	if err != nil {
+		return nil, err
 	}
 	return &gvk, nil
 }

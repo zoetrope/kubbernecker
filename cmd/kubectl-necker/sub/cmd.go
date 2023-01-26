@@ -3,49 +3,69 @@ package sub
 import (
 	"flag"
 	"os"
+	"strconv"
 
+	"github.com/bombsimon/logrusr/v4"
+	"github.com/go-logr/logr"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+type rootOpts struct {
+	loglevel int
+	config   *genericclioptions.ConfigFlags
+	streams  genericclioptions.IOStreams
+	logger   *logr.Logger
+}
+
 // NewCmd creates the root *cobra.Command of `kubectl-necker`.
 func NewCmd(streams genericclioptions.IOStreams) *cobra.Command {
+	opts := &rootOpts{
+		streams: streams,
+	}
+
 	cmd := &cobra.Command{
 		Use:   "kubbernecker",
 		Short: "A brief description of your application",
-		Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-		// Uncomment the following line if your bare application
-		// has an action associated with it:
-		// Run: func(cmd *cobra.Command, args []string) { },
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		Long:  `kubbernecker`,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
+			return opts.Fill(cmd, args)
 		},
 	}
 
+	cmd.PersistentFlags().IntVarP(&opts.loglevel, "log-level", "v", -1, "number for the log level verbosity")
 	config := genericclioptions.NewConfigFlags(true)
 	config.AddFlags(cmd.PersistentFlags())
+	opts.config = config
 
-	klog.InitFlags(nil)
-	cmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-	ctrl.SetLogger(klogr.New())
-
-	flag.CommandLine.VisitAll(func(f *flag.Flag) {
-		if f.Name != "v" { // hide all klog flags except for -v
-			cmd.PersistentFlags().MarkHidden(f.Name)
-		}
-	})
-
-	cmd.AddCommand(newWatchCmd(streams, config))
+	cmd.AddCommand(newWatchCmd(opts))
 
 	return cmd
+}
+
+func (o *rootOpts) Fill(cmd *cobra.Command, args []string) error {
+	klog.InitFlags(nil)
+	flag.Set("v", strconv.Itoa(o.loglevel))
+
+	logruslog := logrus.New()
+	logruslog.SetFormatter(&logrus.TextFormatter{})
+	logruslog.SetLevel(logrus.Level(4 + o.loglevel))
+	logrusLogger := logrusr.New(logruslog)
+
+	o.logger = &logrusLogger
+	ctrl.SetLogger(logrusLogger)
+	klog.SetLogger(logrusLogger.WithName("client-go"))
+
+	//klog.V(0).Info("klog info 0")
+	//klog.V(3).Info("klog info 3")
+	//logrusLogger.V(0).Info("logrus info 0", "level", o.loglevel)
+	//logrusLogger.V(3).Info("logrus info 3", "level", o.loglevel)
+
+	return nil
 }
 
 // rootCmd represents the base command when called without any subcommands
