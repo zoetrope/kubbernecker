@@ -8,6 +8,13 @@
 #   supported_envs:
 #   - all
 registries:
-- type: standard
-  ref: v3.121.0 # renovate: depName=aquaproj/aqua-registry
+  - type: standard
+    ref: v3.121.0 # renovate: depName=aquaproj/aqua-registry
+  - name: local
+    type: local
+    path: registry.yaml
 packages:
+  - name: onsi/ginkgo@v2.7.1
+    registry: local
+  - name: kubernetes-sigs/controller-runtime/setup-envtest@v0.14.2
+    registry: local

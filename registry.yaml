@@ -1,0 +1,17 @@
+packages:
+  - type: go_install
+    name: onsi/ginkgo
+    path: github.com/onsi/ginkgo/v2/ginkgo
+    repo_owner: onsi
+    repo_name: ginkgo
+    description: A Modern Testing Framework for Go
+    files:
+      - name: ginkgo
+  - type: go_install
+    name: kubernetes-sigs/controller-runtime/setup-envtest
+    path: sigs.k8s.io/controller-runtime/tools/setup-envtest
+    repo_owner: kubernetes-sigs
+    repo_name: controller-runtime
+    description: Envtest Binaries Manager
+    files:
+      - name: setup-envtest

@@ -3,22 +3,20 @@ package watch
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/zoetrope/kubbernecker/pkg/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/tools/cache"
 )
 
 type Watcher struct {
-	streams genericclioptions.IOStreams
-	kube    *client.KubeClient
-	gvk     schema.GroupVersionKind
+	logger *logr.Logger
+	kube   *client.KubeClient
+	gvk    schema.GroupVersionKind
 
 	mu         sync.RWMutex
 	statistics map[string]*Statistics
@@ -35,20 +33,20 @@ type ResourceStatistics struct {
 	UpdateCount int
 }
 
-func NewWatcher(streams genericclioptions.IOStreams, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
+func NewWatcher(logger *logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
 	return &Watcher{
-		streams:    streams,
+		logger:     logger,
 		kube:       kube,
 		statistics: map[string]*Statistics{},
 		gvk:        resource,
 	}
 }
 
-func printMetadata(out io.Writer, event string, obj interface{}) {
+func (w *Watcher) printMetadata(event string, obj interface{}) {
 	meta := obj.(*metav1.PartialObjectMetadata)
-	fmt.Fprintf(out, "%s: %s/%s/%s\n", event, meta.GroupVersionKind(), meta.Namespace, meta.Name)
+	w.logger.V(3).Info("Event", "event", event, "gvk", meta.GroupVersionKind(), "namespace", meta.Namespace, "name", meta.Name)
 	for _, m := range meta.ManagedFields {
-		fmt.Fprintf(out, "  - manager: %s(%s)\n", m.Manager, m.Time.Format(time.RFC3339))
+		w.logger.V(5).Info("Manager", "manager", m.Manager, "managedTime", m.Time.Format(time.RFC3339))
 	}
 }
 
@@ -79,18 +77,19 @@ func (w *Watcher) collect(obj interface{}, event string) {
 	}
 }
 
-func (w *Watcher) PrintStatistics() {
+func (w *Watcher) PrintStatistics() string {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
 	b, err := json.MarshalIndent(w.statistics, "", "  ")
 	if err != nil {
-		fmt.Fprintf(w.streams.ErrOut, "failed to marshal json: %v\n", err)
+		w.logger.Error(err, "failed to marshal json")
 	}
-	fmt.Fprintf(w.streams.Out, "%s", string(b))
+	return string(b)
 }
 
 func (w *Watcher) Start(ctx context.Context) error {
+	w.logger.Info("start watcher")
 	meta := &metav1.PartialObjectMetadata{}
 	meta.SetGroupVersionKind(w.gvk)
 	informer, err := w.kube.Cache.GetInformer(ctx, meta)
@@ -100,15 +99,15 @@ func (w *Watcher) Start(ctx context.Context) error {
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			w.collect(obj, "add")
-			printMetadata(w.streams.Out, "add", obj)
+			w.printMetadata("add", obj)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			w.collect(newObj, "update")
-			printMetadata(w.streams.Out, "update", newObj)
+			w.printMetadata("update", newObj)
 		},
 		DeleteFunc: func(obj interface{}) {
 			w.collect(obj, "delete")
-			printMetadata(w.streams.Out, "delete", obj)
+			w.printMetadata("delete", obj)
 		},
 	})
 

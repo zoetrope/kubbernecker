@@ -62,21 +62,9 @@ func (o *watchOptions) Run(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	root := cobwrap.GetOpt[*rootOpts](cmd)
 
-	go func() {
-		klog.V(3).Info("starting cache")
-		err := o.kube.Cache.Start(ctx)
-		if err != nil {
-			klog.Error("failed to start cache", err)
-			return
-		}
-		klog.V(1).Info("cache was closed")
-	}()
-
-	klog.V(3).Info("waiting for cache sync")
-	ok := o.kube.Cache.WaitForCacheSync(ctx)
-	if !ok {
-		klog.Errorf("could not sync cache")
-		return errors.New("could not sync cache")
+	err := o.kube.Start(ctx)
+	if err != nil {
+		return err
 	}
 
 	resources, err := o.targetResources()
@@ -86,7 +74,7 @@ func (o *watchOptions) Run(cmd *cobra.Command, args []string) error {
 
 	for _, res := range resources {
 		klog.V(2).Info("create watcher", res)
-		watcher := watch.NewWatcher(root.streams, o.kube, res)
+		watcher := watch.NewWatcher(root.logger, o.kube, res)
 		o.watchers = append(o.watchers, watcher)
 		klog.V(2).Info("start watcher", res)
 		err = watcher.Start(ctx)
@@ -123,7 +111,7 @@ func (o *watchOptions) targetResources() ([]schema.GroupVersionKind, error) {
 					gv = schema.GroupVersion{}
 				}
 				gvk := gv.WithKind(res.Kind)
-				if o.isExcludedResource(gvk) {
+				if client.IsExcludedResource(gvk) {
 					continue
 				}
 				targets = append(targets, gvk)
@@ -131,7 +119,7 @@ func (o *watchOptions) targetResources() ([]schema.GroupVersionKind, error) {
 		}
 	} else {
 		for _, res := range o.resources {
-			gvk, err := o.detectGVK(res)
+			gvk, err := o.kube.DetectGVK(res)
 			if err != nil {
 				return nil, err
 			}
@@ -140,65 +128,4 @@ func (o *watchOptions) targetResources() ([]schema.GroupVersionKind, error) {
 	}
 
 	return targets, nil
-}
-
-var excludedResources = []schema.GroupVersionKind{
-	{
-		Group:   "",
-		Version: "v1",
-		Kind:    "Binding",
-	},
-	{
-		Group:   "authorization.k8s.io",
-		Version: "v1",
-		Kind:    "LocalSubjectAccessReview",
-	},
-	{
-		Group:   "metrics.k8s.io",
-		Version: "v1beta1",
-		Kind:    "PodMetrics",
-	},
-	{
-		Group:   "",
-		Version: "v1",
-		Kind:    "Event",
-	},
-	{
-		Group:   "",
-		Version: "v1",
-		Kind:    "Endpoints",
-	},
-	{
-		Group:   "discovery.k8s.io",
-		Version: "v1",
-		Kind:    "EndpointSlice",
-	},
-	{
-		Group:   "coordination.k8s.io",
-		Version: "v1",
-		Kind:    "Lease",
-	},
-	{
-		Group:   "",
-		Version: "v1",
-		Kind:    "Node",
-	},
-}
-
-func (o *watchOptions) isExcludedResource(gvk schema.GroupVersionKind) bool {
-	for _, er := range excludedResources {
-		if er == gvk {
-			return true
-		}
-	}
-	return false
-}
-
-func (o *watchOptions) detectGVK(arg string) (*schema.GroupVersionKind, error) {
-	gr := schema.ParseGroupResource(arg)
-	gvk, err := o.kube.Mapper.KindFor(gr.WithVersion(""))
-	if err != nil {
-		return nil, err
-	}
-	return &gvk, nil
 }
