@@ -1,57 +1,47 @@
 package sub
 
 import (
-	"context"
 	"errors"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zoetrope/kubbernecker/pkg"
+	"github.com/zoetrope/kubbernecker/pkg/client"
+	"github.com/zoetrope/kubbernecker/pkg/cobwrap"
+	"github.com/zoetrope/kubbernecker/pkg/watch"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 )
 
 type watchOptions struct {
-	*rootOpts
-
 	resources     []string
 	allNamespaces bool
 	allResources  bool
 
-	kube     *pkg.KubeClient
-	watchers []*pkg.Watcher
+	kube     *client.KubeClient
+	watchers []*watch.Watcher
 }
 
-func newWatchCmd(parentOpts *rootOpts) *cobra.Command {
-	opts := &watchOptions{
-		rootOpts: parentOpts,
+func newWatchCmd() *cobwrap.Command[*watchOptions] {
+
+	cmd := &cobwrap.Command[*watchOptions]{
+		Command: &cobra.Command{
+			Use:   "watch",
+			Short: "",
+			Long:  ``,
+		},
+		Options: &watchOptions{},
 	}
 
-	cmd := &cobra.Command{
-		Use:   "watch",
-		Short: "A brief description of your command",
-		Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return opts.Fill(cmd, args)
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return opts.Run(cmd.Context())
-		},
-	}
-
-	cmd.Flags().BoolVarP(&opts.allResources, "all-resources", "a", false, "If true, watch all resources in the specified namespaces.")
-	cmd.Flags().BoolVarP(&opts.allNamespaces, "all-namespaces", "A", false, "If true, watch the resources in all namespaces.")
+	cmd.Command.Flags().BoolVarP(&cmd.Options.allResources, "all-resources", "a", false, "If true, watch all resources in the specified namespaces.")
+	cmd.Command.Flags().BoolVarP(&cmd.Options.allNamespaces, "all-namespaces", "A", false, "If true, watch the resources in all namespaces.")
 
 	return cmd
 }
 
 func (o *watchOptions) Fill(cmd *cobra.Command, args []string) error {
-	kube, err := pkg.MakeKubeClient(o.config, o.allNamespaces)
+	root := cobwrap.GetOpt[*rootOpts](cmd)
+
+	kube, err := client.MakeKubeClient(root.config, o.allNamespaces)
 	if err != nil {
 		return err
 	}
@@ -68,7 +58,9 @@ func (o *watchOptions) Fill(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (o *watchOptions) Run(ctx context.Context) error {
+func (o *watchOptions) Run(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+	root := cobwrap.GetOpt[*rootOpts](cmd)
 
 	go func() {
 		klog.V(3).Info("starting cache")
@@ -94,7 +86,7 @@ func (o *watchOptions) Run(ctx context.Context) error {
 
 	for _, res := range resources {
 		klog.V(2).Info("create watcher", res)
-		watcher := pkg.NewWatcher(o.streams, o.kube, res)
+		watcher := watch.NewWatcher(root.streams, o.kube, res)
 		o.watchers = append(o.watchers, watcher)
 		klog.V(2).Info("start watcher", res)
 		err = watcher.Start(ctx)

@@ -9,6 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/zoetrope/kubbernecker/pkg/cobwrap"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,27 +23,27 @@ type rootOpts struct {
 }
 
 // NewCmd creates the root *cobra.Command of `kubectl-necker`.
-func NewCmd(streams genericclioptions.IOStreams) *cobra.Command {
-	opts := &rootOpts{
-		streams: streams,
-	}
-
-	cmd := &cobra.Command{
-		Use:   "kubbernecker",
-		Short: "A brief description of your application",
-		Long:  `kubbernecker`,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
-			return opts.Fill(cmd, args)
+func NewCmd(streams genericclioptions.IOStreams) *cobwrap.Command[*rootOpts] {
+	cmd := &cobwrap.Command[*rootOpts]{
+		Command: &cobra.Command{
+			Use:   "kubbernecker",
+			Short: "A brief description of your application",
+			Long:  `kubbernecker`,
+			PersistentPreRun: func(cmd *cobra.Command, args []string) {
+				cmd.SilenceUsage = true
+			},
+		},
+		Options: &rootOpts{
+			streams: streams,
 		},
 	}
 
-	cmd.PersistentFlags().IntVarP(&opts.loglevel, "log-level", "v", -1, "number for the log level verbosity")
+	cmd.Command.PersistentFlags().IntVarP(&cmd.Options.loglevel, "log-level", "v", -1, "number for the log level verbosity")
 	config := genericclioptions.NewConfigFlags(true)
-	config.AddFlags(cmd.PersistentFlags())
-	opts.config = config
+	config.AddFlags(cmd.Command.PersistentFlags())
+	cmd.Options.config = config
 
-	cmd.AddCommand(newWatchCmd(opts))
+	cobwrap.AddCommand(cmd, newWatchCmd())
 
 	return cmd
 }
@@ -60,11 +61,10 @@ func (o *rootOpts) Fill(cmd *cobra.Command, args []string) error {
 	ctrl.SetLogger(logrusLogger)
 	klog.SetLogger(logrusLogger.WithName("client-go"))
 
-	//klog.V(0).Info("klog info 0")
-	//klog.V(3).Info("klog info 3")
-	//logrusLogger.V(0).Info("logrus info 0", "level", o.loglevel)
-	//logrusLogger.V(3).Info("logrus info 3", "level", o.loglevel)
+	return nil
+}
 
+func (o *rootOpts) Run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 

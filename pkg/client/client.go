@@ -1,4 +1,4 @@
-package sub
+package client
 
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -11,14 +11,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
-type kubeClient struct {
-	mapper    meta.RESTMapper
-	cache     cache.Cache
-	client    client.Client
-	discovery *discovery.DiscoveryClient
+type KubeClient struct {
+	Mapper    meta.RESTMapper
+	Cache     cache.Cache
+	Client    client.Client
+	Discovery *discovery.DiscoveryClient
 }
 
-func makeKubeClient(config *genericclioptions.ConfigFlags, allNamespaces bool) (*kubeClient, error) {
+func MakeKubeClient(config *genericclioptions.ConfigFlags, allNamespaces bool) (*KubeClient, error) {
 	cfg, err := config.ToRESTConfig()
 	if err != nil {
 		return nil, err
@@ -69,10 +69,10 @@ func makeKubeClient(config *genericclioptions.ConfigFlags, allNamespaces bool) (
 		return nil, err
 	}
 
-	return &kubeClient{
-		mapper:    mapper,
-		cache:     ca,
-		client:    cli,
-		discovery: disco,
+	return &KubeClient{
+		Mapper:    mapper,
+		Cache:     ca,
+		Client:    cli,
+		Discovery: disco,
 	}, nil
 }

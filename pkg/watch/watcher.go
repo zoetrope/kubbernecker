@@ -1,4 +1,4 @@
-package pkg
+package watch
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/zoetrope/kubbernecker/pkg/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -16,7 +17,7 @@ import (
 
 type Watcher struct {
 	streams genericclioptions.IOStreams
-	kube    *KubeClient
+	kube    *client.KubeClient
 	gvk     schema.GroupVersionKind
 
 	mu         sync.RWMutex
@@ -34,7 +35,7 @@ type ResourceStatistics struct {
 	UpdateCount int
 }
 
-func NewWatcher(streams genericclioptions.IOStreams, kube *KubeClient, resource schema.GroupVersionKind) *Watcher {
+func NewWatcher(streams genericclioptions.IOStreams, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
 	return &Watcher{
 		streams:    streams,
 		kube:       kube,
