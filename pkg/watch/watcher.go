@@ -2,7 +2,6 @@ package watch
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"time"
 
@@ -19,25 +18,18 @@ type Watcher struct {
 	gvk    schema.GroupVersionKind
 
 	mu         sync.RWMutex
-	statistics map[string]*Statistics
-}
-
-type Statistics struct {
-	Resources        map[string]*ResourceStatistics
-	AddCount         int
-	DeleteCount      int
-	UpdateTotalCount int
-}
-
-type ResourceStatistics struct {
-	UpdateCount int
+	statistics Statistics
 }
 
 func NewWatcher(logger *logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
+	statistics := Statistics{}
+	statistics.GroupVersionKind = resource.String()
+	statistics.Namespaces = make(map[string]*NamespaceStatistics)
+
 	return &Watcher{
 		logger:     logger,
 		kube:       kube,
-		statistics: map[string]*Statistics{},
+		statistics: statistics,
 		gvk:        resource,
 	}
 }
@@ -55,12 +47,12 @@ func (w *Watcher) collect(obj interface{}, event string) {
 	defer w.mu.Unlock()
 
 	meta := obj.(*metav1.PartialObjectMetadata)
-	if _, ok := w.statistics[meta.Namespace]; !ok {
-		w.statistics[meta.Namespace] = &Statistics{
-			Resources: map[string]*ResourceStatistics{},
-		}
+	if _, ok := w.statistics.Namespaces[meta.Namespace]; !ok {
+		ks := &NamespaceStatistics{}
+		ks.Resources = make(map[string]*ResourceStatistics)
+		w.statistics.Namespaces[meta.Namespace] = ks
 	}
-	info := w.statistics[meta.Namespace]
+	info := w.statistics.Namespaces[meta.Namespace]
 
 	if _, ok := info.Resources[meta.Name]; !ok {
 		info.Resources[meta.Name] = &ResourceStatistics{}
@@ -77,15 +69,11 @@ func (w *Watcher) collect(obj interface{}, event string) {
 	}
 }
 
-func (w *Watcher) PrintStatistics() string {
+func (w *Watcher) Statistics() *Statistics {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
-	b, err := json.MarshalIndent(w.statistics, "", "  ")
-	if err != nil {
-		w.logger.Error(err, "failed to marshal json")
-	}
-	return string(b)
+	return w.statistics.DeepCopy()
 }
 
 func (w *Watcher) Start(ctx context.Context) error {

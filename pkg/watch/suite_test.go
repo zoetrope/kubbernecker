@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/zoetrope/kubbernecker/pkg/client"
@@ -49,6 +52,13 @@ var _ = BeforeSuite(func() {
 
 	err = kubeClient.Start(context.Background())
 	Expect(err).NotTo(HaveOccurred())
+
+	// wait for creating default namespace
+	Eventually(func(g Gomega) {
+		ns := &corev1.Namespace{}
+		err = kubeClient.Client.Get(context.Background(), ctrlclient.ObjectKey{Name: "default"}, ns)
+		g.Expect(err).ShouldNot(HaveOccurred())
+	}).Should(Succeed())
 })
 
 var _ = AfterSuite(func() {

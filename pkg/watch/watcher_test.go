@@ -2,10 +2,10 @@ package watch
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,8 +51,20 @@ var _ = Describe("Test SampleController", func() {
 		err := kubeClient.Client.Create(ctx, cm)
 		Expect(err).NotTo(HaveOccurred())
 
-		time.Sleep(1 * time.Second)
-		statistics := watcher.PrintStatistics()
-		Expect(statistics).Should(Equal("hoge"))
+		Eventually(func(g Gomega) {
+			statistics := watcher.Statistics()
+			g.Expect(statistics.Namespaces).Should(MatchAllKeys(Keys{
+				"default": PointTo(MatchAllFields(Fields{
+					"Resources": MatchAllKeys(Keys{
+						"test": PointTo(MatchAllFields(Fields{
+							"UpdateCount": Equal(0),
+						})),
+					}),
+					"AddCount":         Equal(1),
+					"UpdateTotalCount": Equal(0),
+					"DeleteCount":      Equal(0),
+				})),
+			}))
+		}).Should(Succeed())
 	})
 })

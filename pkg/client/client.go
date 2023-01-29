@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"errors"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,10 +41,11 @@ func MakeKubeClientFromRestConfig(cfg *rest.Config, namespace string) (*KubeClie
 	if err != nil {
 		return nil, err
 	}
-
+	resync := 30 * time.Second
 	cacheOpts := cache.Options{
 		Scheme: scheme,
 		Mapper: mapper,
+		Resync: &resync,
 	}
 	if namespace != "" {
 		cacheOpts.Namespace = namespace

@@ -1,7 +1,9 @@
 package sub
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -90,7 +92,12 @@ func (o *watchOptions) Run(cmd *cobra.Command, args []string) error {
 	case <-time.After(1 * time.Minute):
 		klog.V(3).Info("timed out")
 		for _, w := range o.watchers {
-			w.PrintStatistics()
+			statistics := w.Statistics()
+			b, err := json.MarshalIndent(statistics, "", "  ")
+			if err != nil {
+				klog.Errorf("failed to marshal json: %v", err)
+			}
+			fmt.Fprint(root.streams.Out, string(b))
 		}
 		return nil
 	}
