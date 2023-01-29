@@ -1,0 +1,11 @@
+apiVersion: ctlptl.dev/v1alpha1
+kind: Registry
+name: kubbernecker-registry
+port: 5252
+---
+apiVersion: ctlptl.dev/v1alpha1
+kind: Cluster
+name: kind-kubbernecker-dev
+product: kind
+kubernetesVersion: v1.25.3
+registry: kubbernecker-registry

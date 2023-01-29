@@ -67,10 +67,11 @@ spec:
         #   type: RuntimeDefault
       containers:
       - command:
-        - /manager
+        - /kubbernecker-controller
         args:
         - --leader-elect
-        image: controller:latest
+        image: kubbernecker:dev
+        imagePullPolicy: IfNotPresent
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

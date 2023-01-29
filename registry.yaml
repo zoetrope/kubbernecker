@@ -7,11 +7,3 @@ packages:
     description: A Modern Testing Framework for Go
     files:
       - name: ginkgo
-  - type: go_install
-    name: kubernetes-sigs/controller-runtime/setup-envtest
-    path: sigs.k8s.io/controller-runtime/tools/setup-envtest
-    repo_owner: kubernetes-sigs
-    repo_name: controller-runtime
-    description: Envtest Binaries Manager
-    files:
-      - name: setup-envtest
