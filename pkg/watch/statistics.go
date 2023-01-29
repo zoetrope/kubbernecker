@@ -6,10 +6,10 @@ type Statistics struct {
 }
 
 type NamespaceStatistics struct {
-	Resources        map[string]*ResourceStatistics
-	AddCount         int
-	DeleteCount      int
-	UpdateTotalCount int
+	Resources   map[string]*ResourceStatistics
+	AddCount    int
+	DeleteCount int
+	UpdateCount int
 }
 
 type ResourceStatistics struct {

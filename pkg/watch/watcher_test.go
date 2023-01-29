@@ -2,6 +2,7 @@ package watch
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -31,6 +32,7 @@ var _ = Describe("Test SampleController", func() {
 				panic(err)
 			}
 		}()
+		time.Sleep(1 * time.Second)
 	})
 
 	AfterEach(func() {
@@ -60,9 +62,9 @@ var _ = Describe("Test SampleController", func() {
 							"UpdateCount": Equal(0),
 						})),
 					}),
-					"AddCount":         Equal(1),
-					"UpdateTotalCount": Equal(0),
-					"DeleteCount":      Equal(0),
+					"AddCount":    Equal(1),
+					"UpdateCount": Equal(0),
+					"DeleteCount": Equal(0),
 				})),
 			}))
 		}).Should(Succeed())

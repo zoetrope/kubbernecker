@@ -17,6 +17,7 @@ type Watcher struct {
 	kube   *client.KubeClient
 	gvk    schema.GroupVersionKind
 
+	startTime  time.Time
 	mu         sync.RWMutex
 	statistics Statistics
 }
@@ -43,10 +44,19 @@ func (w *Watcher) printMetadata(event string, obj interface{}) {
 }
 
 func (w *Watcher) collect(obj interface{}, event string) {
+	meta := obj.(*metav1.PartialObjectMetadata)
+
+	if event == "add" {
+		if meta.CreationTimestamp.Time.Before(w.startTime) {
+			// Ignore add events for resources created before start of watch
+			w.logger.V(3).Info("Ignore resources created before start of watch", "start", w.startTime, "creation", meta.CreationTimestamp)
+			return
+		}
+	}
+
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	meta := obj.(*metav1.PartialObjectMetadata)
 	if _, ok := w.statistics.Namespaces[meta.Namespace]; !ok {
 		ks := &NamespaceStatistics{}
 		ks.Resources = make(map[string]*ResourceStatistics)
@@ -63,6 +73,7 @@ func (w *Watcher) collect(obj interface{}, event string) {
 	case "add":
 		info.AddCount += 1
 	case "update":
+		info.UpdateCount += 1
 		resInfo.UpdateCount += 1
 	case "delete":
 		info.DeleteCount += 1
@@ -78,6 +89,8 @@ func (w *Watcher) Statistics() *Statistics {
 
 func (w *Watcher) Start(ctx context.Context) error {
 	w.logger.Info("start watcher")
+	w.startTime = time.Now()
+
 	meta := &metav1.PartialObjectMetadata{}
 	meta.SetGroupVersionKind(w.gvk)
 	informer, err := w.kube.Cache.GetInformer(ctx, meta)
