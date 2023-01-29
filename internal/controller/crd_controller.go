@@ -3,15 +3,15 @@ package controller
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// ResourceReconciler reconciles a Pod object
-type ResourceReconciler struct {
+// CRDReconciler reconciles a Pod object
+type CRDReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -28,7 +28,7 @@ type ResourceReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
-func (r *ResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CRDReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -37,8 +37,8 @@ func (r *ResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CRDReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Pod{}).
+		For(&apiextensions.CustomResourceDefinition{}).
 		Complete(r)
 }

@@ -67,7 +67,7 @@ spec:
         #   type: RuntimeDefault
       containers:
       - command:
-        - /kubbernecker-controller
+        - /kubbernecker
         args:
         - --leader-elect
         image: kubbernecker:dev

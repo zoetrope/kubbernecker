@@ -9,7 +9,7 @@ spec:
       securityContext: null
       containers:
         - command:
-            - /kubbernecker-controller
+            - /kubbernecker
           args: null
           name: manager
           securityContext: null

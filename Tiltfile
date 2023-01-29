@@ -2,8 +2,8 @@ load('ext://restart_process', 'docker_build_with_restart')
 
 CONTROLLER_DOCKERFILE = '''FROM golang:alpine
 WORKDIR /
-COPY ./bin/kubbernecker-controller /
-CMD ["/kubbernecker-controller"]
+COPY ./bin/kubbernecker /
+CMD ["/kubbernecker"]
 '''
 
 # Generate manifests
@@ -20,9 +20,9 @@ local_resource(
 docker_build_with_restart(
     'kubbernecker:dev', '.',
     dockerfile_contents=CONTROLLER_DOCKERFILE,
-    entrypoint=['/kubbernecker-controller'],
-    only=['./bin/kubbernecker-controller'],
+    entrypoint=['/kubbernecker'],
+    only=['./bin/kubbernecker'],
     live_update=[
-        sync('./bin/kubbernecker-controller', '/kubbernecker-controller'),
+        sync('./bin/kubbernecker', '/kubbernecker'),
     ]
 )
