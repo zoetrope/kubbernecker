@@ -44,6 +44,7 @@ func NewCmd(streams genericclioptions.IOStreams) *cobwrap.Command[*rootOpts] {
 	cmd.Options.config = config
 
 	cobwrap.AddCommand(cmd, newWatchCmd())
+	cobwrap.AddCommand(cmd, newBlameCmd())
 
 	return cmd
 }

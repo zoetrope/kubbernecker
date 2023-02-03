@@ -176,8 +176,20 @@ func (k *KubeClient) Stop() {
 func (k *KubeClient) DetectGVK(arg string) (*schema.GroupVersionKind, error) {
 	gr := schema.ParseGroupResource(arg)
 	gvk, err := k.Mapper.KindFor(gr.WithVersion(""))
-	if err != nil {
-		return nil, err
+	if err == nil {
+		return &gvk, nil
 	}
-	return &gvk, nil
+
+	gvr, gr := schema.ParseResourceArg(arg)
+	if gvr != nil {
+		gvk, err := k.Mapper.KindFor(*gvr)
+		if err == nil {
+			return &gvk, nil
+		}
+	}
+	gvk, err = k.Mapper.KindFor(gr.WithVersion(""))
+	if err == nil {
+		return &gvk, nil
+	}
+	return nil, err
 }

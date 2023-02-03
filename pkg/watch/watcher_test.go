@@ -12,7 +12,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var _ = Describe("Test SampleController", func() {
+var _ = Describe("Test Watcher", func() {
 	ctx := context.Background()
 	var stopFunc func()
 	logger := ctrl.Log.WithName("watcher-test")

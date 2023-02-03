@@ -1,4 +1,4 @@
-package watch
+package client
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/zoetrope/kubbernecker/pkg/client"
 	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,14 +18,14 @@ import (
 )
 
 var cfg *rest.Config
-var kubeClient *client.KubeClient
+var kubeClient *KubeClient
 var testEnv *envtest.Environment
 var scheme = runtime.NewScheme()
 
-func TestWatch(t *testing.T) {
+func TestClient(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Watcher Suite", Label("envtest", "watcher"))
+	RunSpecs(t, "Watcher Suite", Label("envtest", "Client"))
 }
 
 var _ = BeforeSuite(func() {
@@ -45,7 +44,7 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	kubeClient, err = client.MakeKubeClientFromRestConfig(cfg, "default")
+	kubeClient, err = MakeKubeClientFromRestConfig(cfg, "default")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(kubeClient).NotTo(BeNil())
 
