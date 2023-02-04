@@ -73,13 +73,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.CRDReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "CRD")
-		os.Exit(1)
-	}
+	//if err = (&controller.CRDReconciler{
+	//	Client: mgr.GetClient(),
+	//	Scheme: mgr.GetScheme(),
+	//}).SetupWithManager(mgr); err != nil {
+	//	setupLog.Error(err, "unable to create controller", "controller", "CRD")
+	//	os.Exit(1)
+	//}
 
 	mgr.GetConfig()
 
@@ -88,8 +88,13 @@ func main() {
 		setupLog.Error(err, "unable to make KubeClient")
 		os.Exit(1)
 	}
-	if err = mgr.Add(controller.NewWatcherManager(mgr.GetLogger(), c)); err != nil {
+	wm := controller.NewWatcherManager(mgr.GetLogger(), c)
+	if err = mgr.Add(wm); err != nil {
 		setupLog.Error(err, "unable to create runnable", "runnable", "WatcherManager")
+		os.Exit(1)
+	}
+	if err = controller.SetupMetrics(wm); err != nil {
+		setupLog.Error(err, "unable to setup metrics")
 		os.Exit(1)
 	}
 

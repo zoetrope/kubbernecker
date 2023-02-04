@@ -43,7 +43,6 @@ func (m *WatcherManager) Start(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		klog.V(3).Info("done")
-		return nil
 	}
 	return nil
 }

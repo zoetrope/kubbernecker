@@ -22,7 +22,7 @@ var _ = Describe("Test Watcher", func() {
 		gvk, err := kubeClient.DetectGVK("configmaps")
 		Expect(err).NotTo(HaveOccurred())
 		logger.Info("gvk", "gvk", *gvk)
-		watcher = NewWatcher(&logger, kubeClient, *gvk)
+		watcher = NewWatcher(logger, kubeClient, *gvk)
 
 		ctx, cancel := context.WithCancel(ctx)
 		stopFunc = cancel
@@ -50,7 +50,7 @@ var _ = Describe("Test Watcher", func() {
 			},
 		}
 
-		err := kubeClient.Client.Create(ctx, cm)
+		err := kubeClient.Cluster.GetClient().Create(ctx, cm)
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(func(g Gomega) {

@@ -1,7 +1,9 @@
 package watch
 
+import "k8s.io/apimachinery/pkg/runtime/schema"
+
 type Statistics struct {
-	GroupVersionKind string
+	GroupVersionKind schema.GroupVersionKind
 	Namespaces       map[string]*NamespaceStatistics
 }
 

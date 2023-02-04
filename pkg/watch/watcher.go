@@ -24,7 +24,7 @@ type Watcher struct {
 
 func NewWatcher(logger logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
 	statistics := Statistics{}
-	statistics.GroupVersionKind = resource.String()
+	statistics.GroupVersionKind = resource
 	statistics.Namespaces = make(map[string]*NamespaceStatistics)
 
 	return &Watcher{
