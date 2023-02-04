@@ -2,27 +2,36 @@ package sub
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/zoetrope/kubbernecker/pkg/watch"
+	"k8s.io/klog/v2"
 
 	"github.com/spf13/cobra"
 	"github.com/zoetrope/kubbernecker/pkg/client"
 	"github.com/zoetrope/kubbernecker/pkg/cobwrap"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type blameOptions struct {
-	kube *client.KubeClient
+	kube     *client.KubeClient
+	duration time.Duration
 }
 
 func newBlameCmd() *cobwrap.Command[*blameOptions] {
 
 	cmd := &cobwrap.Command[*blameOptions]{
 		Command: &cobra.Command{
-			Use:   "blame",
+			Use:   "blame TYPE[.VERSION][.GROUP] NAME",
 			Short: "",
 			Long:  ``,
+			Args:  cobra.ExactArgs(2),
 		},
 		Options: &blameOptions{},
 	}
+
+	cmd.Command.Flags().DurationVarP(&cmd.Options.duration, "duration", "d", 1*time.Minute, "")
 
 	return cmd
 }
@@ -53,53 +62,30 @@ func (o *blameOptions) Run(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	serverResources, err := o.kube.Discovery.ServerPreferredNamespacedResources()
-	if err != nil {
-		return err
-	}
-	for _, resList := range serverResources {
-
-		root.logger.Info("apiversion", "groupversion", resList.GroupVersion, "apiversion", resList.APIVersion)
-
-		for _, res := range resList.APIResources {
-			gv, err := schema.ParseGroupVersion(resList.GroupVersion)
-			if err != nil {
-				gv = schema.GroupVersion{}
-			}
-			gvk := gv.WithKind(res.Kind)
-			if client.IsExcludedResource(gvk) {
-				continue
-			}
-			root.logger.Info("resource", "group", res.Group, "version", res.Version, "kind", res.Kind)
-		}
-	}
-
-	groups, apiresources, err := o.kube.Discovery.ServerGroupsAndResources()
+	gvk, err := o.kube.DetectGVK(args[0])
 	if err != nil {
 		return err
 	}
 
-	for _, g := range groups {
-		for _, v := range g.Versions {
-			root.logger.Info("group-version", "version", v.GroupVersion)
-		}
+	klog.V(2).Info("create watcher", *gvk)
+	watcher := watch.NewBlameWatcher(root.logger, o.kube, *gvk, args[1])
+	klog.V(2).Info("start watcher", *gvk)
+	err = watcher.Start(ctx)
+	if err != nil {
+		return err
 	}
 
-	for _, resList := range apiresources {
-
-		root.logger.Info("apiversion", "groupversion", resList.GroupVersion, "apiversion", resList.APIVersion)
-
-		for _, res := range resList.APIResources {
-			gv, err := schema.ParseGroupVersion(resList.GroupVersion)
-			if err != nil {
-				gv = schema.GroupVersion{}
-			}
-			gvk := gv.WithKind(res.Kind)
-			if client.IsExcludedResource(gvk) {
-				continue
-			}
-			root.logger.Info("resource", "group", res.Group, "version", res.Version, "kind", res.Kind)
+	select {
+	case <-ctx.Done():
+		klog.V(3).Info("done")
+	case <-time.After(o.duration):
+		klog.V(3).Info("timed out")
+		statistics := watcher.Statistics()
+		b, err := json.MarshalIndent(statistics, "", "  ")
+		if err != nil {
+			klog.Errorf("failed to marshal json: %v", err)
 		}
+		fmt.Fprint(root.streams.Out, string(b))
 	}
 	return nil
 }
