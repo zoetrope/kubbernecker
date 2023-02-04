@@ -1,6 +1,8 @@
 package sub
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 	"github.com/zoetrope/kubbernecker/pkg/client"
 	"github.com/zoetrope/kubbernecker/pkg/cobwrap"
@@ -37,15 +39,19 @@ func (o *blameOptions) Fill(cmd *cobra.Command, args []string) error {
 }
 
 func (o *blameOptions) Run(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
 	root := cobwrap.GetOpt[*rootOpts](cmd)
+
+	ctx, cancel := context.WithCancel(cmd.Context())
+	defer cancel()
 
 	root.logger.Info("run")
 
-	err := o.kube.Start(ctx)
-	if err != nil {
-		return err
-	}
+	go func() {
+		err := o.kube.Cluster.Start(ctx)
+		if err != nil {
+			root.logger.Error(err, "failed to start cluster")
+		}
+	}()
 
 	serverResources, err := o.kube.Discovery.ServerPreferredNamespacedResources()
 	if err != nil {

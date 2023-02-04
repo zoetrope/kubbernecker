@@ -1,6 +1,7 @@
 package sub
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +19,7 @@ type watchOptions struct {
 	resources     []string
 	allNamespaces bool
 	allResources  bool
+	duration      time.Duration
 
 	kube     *client.KubeClient
 	watchers []*watch.Watcher
@@ -36,6 +38,7 @@ func newWatchCmd() *cobwrap.Command[*watchOptions] {
 
 	cmd.Command.Flags().BoolVarP(&cmd.Options.allResources, "all-resources", "a", false, "If true, watch all resources in the specified namespaces.")
 	cmd.Command.Flags().BoolVarP(&cmd.Options.allNamespaces, "all-namespaces", "A", false, "If true, watch the resources in all namespaces.")
+	cmd.Command.Flags().DurationVarP(&cmd.Options.duration, "duration", "d", 1*time.Minute, "")
 
 	return cmd
 }
@@ -61,13 +64,18 @@ func (o *watchOptions) Fill(cmd *cobra.Command, args []string) error {
 }
 
 func (o *watchOptions) Run(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
+	klog.V(1).Info("run watch")
 	root := cobwrap.GetOpt[*rootOpts](cmd)
 
-	err := o.kube.Start(ctx)
-	if err != nil {
-		return err
-	}
+	ctx, cancel := context.WithCancel(cmd.Context())
+	defer cancel()
+
+	go func() {
+		err := o.kube.Cluster.Start(ctx)
+		if err != nil {
+			root.logger.Error(err, "failed to start cluster")
+		}
+	}()
 
 	resources, err := o.targetResources()
 	if err != nil {
@@ -89,7 +97,7 @@ func (o *watchOptions) Run(cmd *cobra.Command, args []string) error {
 	case <-ctx.Done():
 		klog.V(3).Info("done")
 		return nil
-	case <-time.After(1 * time.Minute):
+	case <-time.After(o.duration):
 		klog.V(3).Info("timed out")
 		for _, w := range o.watchers {
 			statistics := w.Statistics()

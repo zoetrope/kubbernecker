@@ -1,30 +1,51 @@
 package client
 
 import (
-	"context"
-	"errors"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/meta"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
 
 type KubeClient struct {
-	Mapper    meta.RESTMapper
-	Cache     cache.Cache
-	Client    client.Client
+	Cluster   cluster.Cluster
 	Discovery *discovery.DiscoveryClient
+}
 
-	cancel context.CancelFunc
+func NewCachingClient(cache cache.Cache, config *rest.Config, options client.Options, uncachedObjects ...client.Object) (client.Client, error) {
+	c, err := client.New(config, options)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.NewDelegatingClient(client.NewDelegatingClientInput{
+		CacheReader:       cache,
+		Client:            c,
+		UncachedObjects:   uncachedObjects,
+		CacheUnstructured: true,
+	})
+}
+
+var _ cluster.NewClientFunc = NewCachingClient
+
+func MakeKubeClientFromCluster(cfg *rest.Config, c cluster.Cluster) (*KubeClient, error) {
+	disco, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &KubeClient{
+		Cluster:   c,
+		Discovery: disco,
+	}, nil
 }
 
 func MakeKubeClientFromRestConfig(cfg *rest.Config, namespace string) (*KubeClient, error) {
@@ -33,37 +54,13 @@ func MakeKubeClientFromRestConfig(cfg *rest.Config, namespace string) (*KubeClie
 		return nil, err
 	}
 
-	c, err := client.New(cfg, client.Options{Scheme: scheme})
-	if err != nil {
-		return nil, err
-	}
-	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
-	if err != nil {
-		return nil, err
-	}
-	resync := 30 * time.Second
-	cacheOpts := cache.Options{
-		Scheme: scheme,
-		Mapper: mapper,
-		Resync: &resync,
-	}
-	if namespace != "" {
-		cacheOpts.Namespace = namespace
-	}
-
-	ca, err := cache.New(cfg, cacheOpts)
-	if err != nil {
-		return nil, err
-	}
-
-	cli, err := client.NewDelegatingClient(client.NewDelegatingClientInput{
-		CacheReader:       ca,
-		Client:            c,
-		CacheUnstructured: true,
+	c, err := cluster.New(cfg, func(opts *cluster.Options) {
+		opts.Namespace = namespace
+		opts.Scheme = scheme
+		resync := 0 * time.Second
+		opts.SyncPeriod = &resync
+		opts.NewClient = NewCachingClient
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	disco, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
@@ -71,9 +68,7 @@ func MakeKubeClientFromRestConfig(cfg *rest.Config, namespace string) (*KubeClie
 	}
 
 	return &KubeClient{
-		Mapper:    mapper,
-		Cache:     ca,
-		Client:    cli,
+		Cluster:   c,
 		Discovery: disco,
 	}, nil
 }
@@ -147,47 +142,22 @@ func IsExcludedResource(gvk schema.GroupVersionKind) bool {
 	return false
 }
 
-func (k *KubeClient) Start(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
-	k.cancel = cancel
-	go func() {
-		klog.V(3).Info("starting cache")
-		err := k.Cache.Start(ctx)
-		if err != nil {
-			klog.Error("failed to start cache", err)
-			return
-		}
-		klog.V(1).Info("cache was closed")
-	}()
-
-	klog.V(3).Info("waiting for cache sync")
-	ok := k.Cache.WaitForCacheSync(ctx)
-	if !ok {
-		klog.Errorf("could not sync cache")
-		return errors.New("could not sync cache")
-	}
-	return nil
-}
-
-func (k *KubeClient) Stop() {
-	k.cancel()
-}
-
 func (k *KubeClient) DetectGVK(arg string) (*schema.GroupVersionKind, error) {
+	mapper := k.Cluster.GetRESTMapper()
 	gr := schema.ParseGroupResource(arg)
-	gvk, err := k.Mapper.KindFor(gr.WithVersion(""))
+	gvk, err := mapper.KindFor(gr.WithVersion(""))
 	if err == nil {
 		return &gvk, nil
 	}
 
 	gvr, gr := schema.ParseResourceArg(arg)
 	if gvr != nil {
-		gvk, err := k.Mapper.KindFor(*gvr)
+		gvk, err := mapper.KindFor(*gvr)
 		if err == nil {
 			return &gvk, nil
 		}
 	}
-	gvk, err = k.Mapper.KindFor(gr.WithVersion(""))
+	gvk, err = mapper.KindFor(gr.WithVersion(""))
 	if err == nil {
 		return &gvk, nil
 	}

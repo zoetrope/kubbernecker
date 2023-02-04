@@ -22,6 +22,8 @@ var kubeClient *KubeClient
 var testEnv *envtest.Environment
 var scheme = runtime.NewScheme()
 
+var cancelCluster context.CancelFunc
+
 func TestClient(t *testing.T) {
 	RegisterFailHandler(Fail)
 
@@ -44,24 +46,25 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	kubeClient, err = MakeKubeClientFromRestConfig(cfg, "default")
+	kubeClient, err := MakeKubeClientFromRestConfig(cfg, "default")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(kubeClient).NotTo(BeNil())
 
-	err = kubeClient.Start(context.Background())
-	Expect(err).NotTo(HaveOccurred())
+	var ctx context.Context
+	ctx, cancelCluster = context.WithCancel(context.Background())
+	go kubeClient.Cluster.Start(ctx)
 
 	// wait for creating default namespace
 	Eventually(func(g Gomega) {
 		ns := &corev1.Namespace{}
-		err = kubeClient.Client.Get(context.Background(), ctrlclient.ObjectKey{Name: "default"}, ns)
+		err = kubeClient.Cluster.GetClient().Get(context.Background(), ctrlclient.ObjectKey{Name: "default"}, ns)
 		g.Expect(err).ShouldNot(HaveOccurred())
 	}).Should(Succeed())
 })
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
-	kubeClient.Stop()
+	cancelCluster()
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

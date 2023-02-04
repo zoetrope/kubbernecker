@@ -5,21 +5,21 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/bombsimon/logrusr/v4"
 	"github.com/go-logr/logr"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/zoetrope/kubbernecker/pkg/cobwrap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 type rootOpts struct {
 	loglevel int
 	config   *genericclioptions.ConfigFlags
 	streams  genericclioptions.IOStreams
-	logger   *logr.Logger
+	logger   logr.Logger
 }
 
 // NewCmd creates the root *cobra.Command of `kubectl-necker`.
@@ -53,15 +53,25 @@ func (o *rootOpts) Fill(cmd *cobra.Command, args []string) error {
 	klog.InitFlags(nil)
 	flag.Set("v", strconv.Itoa(o.loglevel))
 
-	logruslog := logrus.New()
-	logruslog.SetFormatter(&logrus.TextFormatter{})
-	logruslog.SetLevel(logrus.Level(4 + o.loglevel))
-	logrusLogger := logrusr.New(logruslog)
+	//logruslog := logrus.New()
+	//logruslog.SetFormatter(&logrus.TextFormatter{})
+	//logruslog.SetLevel(logrus.Level(4 + o.loglevel))
+	//logrusLogger := logrusr.New(logruslog)
 
-	o.logger = &logrusLogger
-	ctrl.SetLogger(logrusLogger)
-	klog.SetLogger(logrusLogger.WithName("client-go"))
+	//o.logger = &logrusLogger
+	//ctrl.SetLogger(logrusLogger)
+	//klog.SetLogger(logrusLogger.WithName("client-go"))
 
+	// zap
+	zapopts := zap.Options{
+		Development: true,
+		Level:       zapcore.Level(-1 * o.loglevel),
+	}
+	//zapopts.BindFlags(flag.CommandLine)
+	zapLogger := zap.New(zap.UseFlagOptions(&zapopts))
+	o.logger = zapLogger
+	ctrl.SetLogger(zapLogger)
+	klog.SetLogger(zapLogger.WithName("client-go"))
 	return nil
 }
 

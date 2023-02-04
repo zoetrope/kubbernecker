@@ -13,7 +13,7 @@ import (
 )
 
 type Watcher struct {
-	logger *logr.Logger
+	logger logr.Logger
 	kube   *client.KubeClient
 	gvk    schema.GroupVersionKind
 
@@ -22,7 +22,7 @@ type Watcher struct {
 	statistics Statistics
 }
 
-func NewWatcher(logger *logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
+func NewWatcher(logger logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
 	statistics := Statistics{}
 	statistics.GroupVersionKind = resource.String()
 	statistics.Namespaces = make(map[string]*NamespaceStatistics)
@@ -93,7 +93,7 @@ func (w *Watcher) Start(ctx context.Context) error {
 
 	meta := &metav1.PartialObjectMetadata{}
 	meta.SetGroupVersionKind(w.gvk)
-	informer, err := w.kube.Cache.GetInformer(ctx, meta)
+	informer, err := w.kube.Cluster.GetCache().GetInformer(ctx, meta)
 	if err != nil {
 		return err
 	}
