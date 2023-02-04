@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/bombsimon/logrusr/v4 v4.0.0
 	github.com/go-logr/logr v1.2.3
-	github.com/onsi/ginkgo/v2 v2.7.1
+	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/sirupsen/logrus v1.9.0
