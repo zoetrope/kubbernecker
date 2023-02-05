@@ -22,11 +22,11 @@ type rootOpts struct {
 	logger   logr.Logger
 }
 
-// NewCmd creates the root *cobra.Command of `kubectl-necker`.
+// NewCmd creates the root *cobra.Command of `kubectl-rubberneck`.
 func NewCmd(streams genericclioptions.IOStreams) *cobwrap.Command[*rootOpts] {
 	cmd := &cobwrap.Command[*rootOpts]{
 		Command: &cobra.Command{
-			Use:   "kubbernecker",
+			Use:   "kubectl-rubberneck",
 			Short: "A brief description of your application",
 			Long:  `kubbernecker`,
 			PersistentPreRun: func(cmd *cobra.Command, args []string) {
