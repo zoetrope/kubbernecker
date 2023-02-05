@@ -1,0 +1,19 @@
+targetResources:
+  - group: ""
+    version: "v1"
+    kind: "Pod"
+  - group: ""
+    version: "v1"
+    kind: "ConfigMap"
+    namespaceSelector:
+      matchLabels:
+        role: user
+  - group: ""
+    version: "v1"
+    kind: "Service"
+    resourceSelector:
+      matchLabels:
+        role: admin
+namespaceSelector:
+  matchLabels:
+    role: admin

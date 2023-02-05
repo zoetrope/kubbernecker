@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var _ = Describe("Test KubeClient", func() {
@@ -47,5 +48,13 @@ var _ = Describe("Test KubeClient", func() {
 			"Version": Equal("v1"),
 			"Group":   Equal("admissionregistration.k8s.io"),
 		})))
+	})
+
+	It("should validate group version kind", func() {
+		err := kubeClient.IsValidGVK(&schema.GroupVersionKind{
+			Group: "apps",
+			Kind:  "Deployment",
+		})
+		Expect(err).ShouldNot(HaveOccurred())
 	})
 })

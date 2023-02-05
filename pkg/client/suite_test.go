@@ -27,7 +27,7 @@ var cancelCluster context.CancelFunc
 func TestClient(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Watcher Suite", Label("envtest", "Client"))
+	RunSpecs(t, "Watcher Suite", Label("envtest", "client"))
 }
 
 var _ = BeforeSuite(func() {
@@ -46,7 +46,7 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	kubeClient, err := MakeKubeClientFromRestConfig(cfg, "default")
+	kubeClient, err = MakeKubeClientFromRestConfig(cfg, "default")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(kubeClient).NotTo(BeNil())
 

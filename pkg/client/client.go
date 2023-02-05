@@ -1,9 +1,8 @@
 package client
 
 import (
+	"fmt"
 	"time"
-
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -11,6 +10,7 @@ import (
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
@@ -36,8 +36,8 @@ func NewCachingClient(cache cache.Cache, config *rest.Config, options client.Opt
 
 var _ cluster.NewClientFunc = NewCachingClient
 
-func MakeKubeClientFromCluster(cfg *rest.Config, c cluster.Cluster) (*KubeClient, error) {
-	disco, err := discovery.NewDiscoveryClientForConfig(cfg)
+func MakeKubeClientFromCluster(c cluster.Cluster) (*KubeClient, error) {
+	disco, err := discovery.NewDiscoveryClientForConfig(c.GetConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -162,4 +162,11 @@ func (k *KubeClient) DetectGVK(arg string) (*schema.GroupVersionKind, error) {
 		return &gvk, nil
 	}
 	return nil, err
+}
+func (k *KubeClient) IsValidGVK(gvk *schema.GroupVersionKind) error {
+	_, err := k.Cluster.GetRESTMapper().RESTMapping(schema.GroupKind{Group: gvk.Group, Kind: gvk.Kind}, gvk.Version)
+	if err != nil {
+		return fmt.Errorf("invalid gvk %s: %w", gvk.String(), err)
+	}
+	return nil
 }

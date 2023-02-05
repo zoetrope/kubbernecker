@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"k8s.io/apimachinery/pkg/labels"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -22,7 +24,7 @@ var _ = Describe("Test Watcher", func() {
 		gvk, err := kubeClient.DetectGVK("configmaps")
 		Expect(err).NotTo(HaveOccurred())
 		logger.Info("gvk", "gvk", *gvk)
-		watcher = NewWatcher(logger, kubeClient, *gvk)
+		watcher = NewWatcher(logger, kubeClient, *gvk, labels.Everything(), labels.Everything())
 
 		ctx, cancel := context.WithCancel(ctx)
 		stopFunc = cancel

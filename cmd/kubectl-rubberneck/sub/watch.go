@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/labels"
+
 	"github.com/spf13/cobra"
 	"github.com/zoetrope/kubbernecker/pkg/client"
 	"github.com/zoetrope/kubbernecker/pkg/cobwrap"
@@ -84,7 +86,7 @@ func (o *watchOptions) Run(cmd *cobra.Command, args []string) error {
 
 	for _, res := range resources {
 		klog.V(2).Info("create watcher", res)
-		watcher := watch.NewWatcher(root.logger, o.kube, res)
+		watcher := watch.NewWatcher(root.logger, o.kube, res, labels.Everything(), labels.Everything())
 		o.watchers = append(o.watchers, watcher)
 		klog.V(2).Info("start watcher", res)
 		err = watcher.Start(ctx)

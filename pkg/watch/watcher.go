@@ -7,9 +7,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/zoetrope/kubbernecker/pkg/client"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Watcher struct {
@@ -17,21 +20,26 @@ type Watcher struct {
 	kube   *client.KubeClient
 	gvk    schema.GroupVersionKind
 
-	startTime  time.Time
+	nsSelector  labels.Selector
+	resSelector labels.Selector
+	startTime   time.Time
+
 	mu         sync.RWMutex
 	statistics Statistics
 }
 
-func NewWatcher(logger logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
+func NewWatcher(logger logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind, nsSelector labels.Selector, resSelector labels.Selector) *Watcher {
 	statistics := Statistics{}
 	statistics.GroupVersionKind = resource
 	statistics.Namespaces = make(map[string]*NamespaceStatistics)
 
 	return &Watcher{
-		logger:     logger,
-		kube:       kube,
-		statistics: statistics,
-		gvk:        resource,
+		logger:      logger,
+		kube:        kube,
+		statistics:  statistics,
+		gvk:         resource,
+		nsSelector:  nsSelector,
+		resSelector: resSelector,
 	}
 }
 
@@ -50,6 +58,21 @@ func (w *Watcher) collect(obj interface{}, event string) {
 		if meta.CreationTimestamp.Time.Before(w.startTime) {
 			// Ignore add events for resources created before start of watch
 			w.logger.V(3).Info("Ignore resources created before start of watch", "start", w.startTime, "creation", meta.CreationTimestamp)
+			return
+		}
+	}
+
+	if !w.resSelector.Matches(labels.Set(meta.Labels)) {
+		return
+	}
+	if meta.Namespace != "" {
+		ns := &corev1.Namespace{}
+		err := w.kube.Cluster.GetClient().Get(context.TODO(), ctrlclient.ObjectKey{Name: meta.Namespace}, ns)
+		if err != nil {
+			w.logger.Error(err, "failed to get namespace", "namespace", meta.Namespace)
+			return
+		}
+		if !w.resSelector.Matches(labels.Set(ns.Labels)) {
 			return
 		}
 	}
@@ -88,7 +111,7 @@ func (w *Watcher) Statistics() *Statistics {
 }
 
 func (w *Watcher) Start(ctx context.Context) error {
-	w.logger.Info("start watcher")
+	w.logger.Info("start watcher", "gvk", w.gvk.String(), "nsSelector", w.nsSelector.String(), "resSelector", w.resSelector.String())
 	w.startTime = time.Now()
 
 	meta := &metav1.PartialObjectMetadata{}
