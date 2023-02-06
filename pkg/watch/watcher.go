@@ -16,47 +16,40 @@ import (
 )
 
 type Watcher struct {
-	logger logr.Logger
-	kube   *client.KubeClient
-	gvk    schema.GroupVersionKind
-
+	logger      logr.Logger
+	kube        *client.KubeClient
+	gvk         schema.GroupVersionKind
 	nsSelector  labels.Selector
 	resSelector labels.Selector
-	startTime   time.Time
+
+	startTime time.Time
 
 	mu         sync.RWMutex
 	statistics Statistics
 }
 
-func NewWatcher(logger logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind, nsSelector labels.Selector, resSelector labels.Selector) *Watcher {
+func NewWatcher(logger logr.Logger, kube *client.KubeClient, gvk schema.GroupVersionKind, nsSelector labels.Selector, resSelector labels.Selector) *Watcher {
 	statistics := Statistics{}
-	statistics.GroupVersionKind = resource
+	statistics.GroupVersionKind = gvk
 	statistics.Namespaces = make(map[string]*NamespaceStatistics)
 
 	return &Watcher{
 		logger:      logger,
 		kube:        kube,
 		statistics:  statistics,
-		gvk:         resource,
+		gvk:         gvk,
 		nsSelector:  nsSelector,
 		resSelector: resSelector,
 	}
 }
 
-func (w *Watcher) printMetadata(event string, obj interface{}) {
+func (w *Watcher) handle(obj interface{}, event string) {
 	meta := obj.(*metav1.PartialObjectMetadata)
+
 	w.logger.V(3).Info("Event", "event", event, "gvk", meta.GroupVersionKind(), "namespace", meta.Namespace, "name", meta.Name)
-	for _, m := range meta.ManagedFields {
-		w.logger.V(5).Info("Manager", "manager", m.Manager, "managedTime", m.Time.Format(time.RFC3339))
-	}
-}
-
-func (w *Watcher) collect(obj interface{}, event string) {
-	meta := obj.(*metav1.PartialObjectMetadata)
-
 	if event == "add" {
 		if meta.CreationTimestamp.Time.Before(w.startTime) {
-			// Ignore add events for resources created before start of watch
+			// Ignore add events for resources created before start of watching
 			w.logger.V(3).Info("Ignore resources created before start of watch", "start", w.startTime, "creation", meta.CreationTimestamp)
 			return
 		}
@@ -65,7 +58,7 @@ func (w *Watcher) collect(obj interface{}, event string) {
 	if !w.resSelector.Matches(labels.Set(meta.Labels)) {
 		return
 	}
-	if meta.Namespace != "" {
+	if !w.nsSelector.Empty() && meta.Namespace != "" {
 		ns := &corev1.Namespace{}
 		err := w.kube.Cluster.GetClient().Get(context.TODO(), ctrlclient.ObjectKey{Name: meta.Namespace}, ns)
 		if err != nil {
@@ -122,16 +115,13 @@ func (w *Watcher) Start(ctx context.Context) error {
 	}
 	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			w.collect(obj, "add")
-			w.printMetadata("add", obj)
+			w.handle(obj, "add")
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			w.collect(newObj, "update")
-			w.printMetadata("update", newObj)
+			w.handle(newObj, "update")
 		},
 		DeleteFunc: func(obj interface{}) {
-			w.collect(obj, "delete")
-			w.printMetadata("delete", obj)
+			w.handle(obj, "delete")
 		},
 	})
 

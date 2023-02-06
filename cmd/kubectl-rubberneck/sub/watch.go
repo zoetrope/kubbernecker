@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/apimachinery/pkg/labels"
-
 	"github.com/spf13/cobra"
 	"github.com/zoetrope/kubbernecker/pkg/client"
 	"github.com/zoetrope/kubbernecker/pkg/cobwrap"
 	"github.com/zoetrope/kubbernecker/pkg/watch"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 )
