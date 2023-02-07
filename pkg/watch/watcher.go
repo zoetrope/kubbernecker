@@ -11,7 +11,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/cache"
+	toolscache "k8s.io/client-go/tools/cache"
+	cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -22,7 +23,9 @@ type Watcher struct {
 	nsSelector  labels.Selector
 	resSelector labels.Selector
 
-	startTime time.Time
+	startTime   time.Time
+	informer    cache.Informer
+	regstration toolscache.ResourceEventHandlerRegistration
 
 	mu         sync.RWMutex
 	statistics Statistics
@@ -30,7 +33,11 @@ type Watcher struct {
 
 func NewWatcher(logger logr.Logger, kube *client.KubeClient, gvk schema.GroupVersionKind, nsSelector labels.Selector, resSelector labels.Selector) *Watcher {
 	statistics := Statistics{}
-	statistics.GroupVersionKind = gvk
+	statistics.GroupVersionKind = metav1.GroupVersionKind{
+		Group:   gvk.Group,
+		Version: gvk.Version,
+		Kind:    gvk.Kind,
+	}
 	statistics.Namespaces = make(map[string]*NamespaceStatistics)
 
 	return &Watcher{
@@ -65,7 +72,7 @@ func (w *Watcher) handle(obj interface{}, event string) {
 			w.logger.Error(err, "failed to get namespace", "namespace", meta.Namespace)
 			return
 		}
-		if !w.resSelector.Matches(labels.Set(ns.Labels)) {
+		if !w.nsSelector.Matches(labels.Set(ns.Labels)) {
 			return
 		}
 	}
@@ -113,7 +120,9 @@ func (w *Watcher) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	w.informer = informer
+
+	reg, err := informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			w.handle(obj, "add")
 		},
@@ -124,6 +133,11 @@ func (w *Watcher) Start(ctx context.Context) error {
 			w.handle(obj, "delete")
 		},
 	})
+	w.regstration = reg
 
 	return err
+}
+
+func (w *Watcher) Stop() error {
+	return w.informer.RemoveEventHandler(w.regstration)
 }

@@ -1,21 +1,23 @@
 package watch
 
-import "k8s.io/apimachinery/pkg/runtime/schema"
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 type Statistics struct {
-	GroupVersionKind schema.GroupVersionKind
-	Namespaces       map[string]*NamespaceStatistics
+	GroupVersionKind metav1.GroupVersionKind         `json:"gvk"`
+	Namespaces       map[string]*NamespaceStatistics `json:"namespaces"`
 }
 
 type NamespaceStatistics struct {
-	Resources   map[string]*ResourceStatistics
-	AddCount    int
-	DeleteCount int
-	UpdateCount int
+	Resources   map[string]*ResourceStatistics `json:"resources"`
+	AddCount    int                            `json:"add"`
+	DeleteCount int                            `json:"delete"`
+	UpdateCount int                            `json:"update"`
 }
 
 type ResourceStatistics struct {
-	UpdateCount int
+	UpdateCount int `json:"update"`
 }
 
 func (in *Statistics) DeepCopy() *Statistics {
