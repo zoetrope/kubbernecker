@@ -17,7 +17,7 @@ packages:
 - name: kubernetes-sigs/controller-tools/controller-gen@v0.11.3
 - name: onsi/ginkgo@v2.8.0
   registry: local
-- name: kubernetes/kubectl@v1.26.0
+- name: kubernetes/kubectl@v1.26.1
 - name: kubernetes-sigs/kustomize@kustomize/v4.5.7
 - name: kubernetes-sigs/kind@v0.17.0
 - name: tilt-dev/tilt@v0.31.1
