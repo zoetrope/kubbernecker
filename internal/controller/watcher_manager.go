@@ -77,12 +77,15 @@ func (m *WatcherManager) targetResources() ([]schema.GroupVersionKind, error) {
 			targets = append(targets, gvk)
 		}
 	} else {
-		serverResources, err := m.kube.Discovery.ServerPreferredNamespacedResources()
+		serverResources, err := m.kube.Discovery.ServerPreferredResources()
 		if err != nil {
 			return nil, err
 		}
 		for _, resList := range serverResources {
 			for _, res := range resList.APIResources {
+				if !m.config.EnableClusterResources && !res.Namespaced {
+					continue
+				}
 				gv, err := schema.ParseGroupVersion(resList.GroupVersion)
 				if err != nil {
 					gv = schema.GroupVersion{}

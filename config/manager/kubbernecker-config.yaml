@@ -2,4 +2,4 @@ namespaceSelector:
   {}
 targetResources:
   {}
-enableClusterResource: false
+enableClusterResources: false

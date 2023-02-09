@@ -8,14 +8,15 @@ import (
 
 // Config represents the configuration file of kubbernecker.
 type Config struct {
-	TargetResources   []TargetResource      `json:"TargetResources"`
-	NamespaceSelector *metav1.LabelSelector `json:"NamespaceSelector"`
+	TargetResources        []TargetResource      `json:"TargetResources,omitempty"`
+	NamespaceSelector      *metav1.LabelSelector `json:"NamespaceSelector,omitempty"`
+	EnableClusterResources bool                  `json:"EnableClusterResources,omitempty"`
 }
 
 type TargetResource struct {
 	metav1.GroupVersionKind `json:",inline"`
-	NamespaceSelector       *metav1.LabelSelector `json:"namespaceSelector"`
-	ResourceSelector        *metav1.LabelSelector `json:"resourceSelector"`
+	NamespaceSelector       *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	ResourceSelector        *metav1.LabelSelector `json:"resourceSelector,omitempty"`
 }
 
 func (c *Config) SelectorFor(gvk metav1.GroupVersionKind) (nsSelector labels.Selector, resSelector labels.Selector, err error) {
