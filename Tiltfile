@@ -20,7 +20,7 @@ local_resource(
 docker_build_with_restart(
     'kubbernecker:dev', '.',
     dockerfile_contents=CONTROLLER_DOCKERFILE,
-    entrypoint=['/kubbernecker'],
+    entrypoint=['/kubbernecker', '--zap-devel=true'],
     only=['./bin/kubbernecker'],
     live_update=[
         sync('./bin/kubbernecker', '/kubbernecker'),

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/zoetrope/kubbernecker/pkg/client"
@@ -46,7 +48,7 @@ var _ = BeforeSuite(func() {
 
 	//+kubebuilder:scaffold:scheme
 
-	kubeClient, err = client.MakeKubeClientFromRestConfig(cfg, "default")
+	kubeClient, err = client.MakeKubeClientFromRestConfig(cfg, "")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(kubeClient).NotTo(BeNil())
 
@@ -54,12 +56,35 @@ var _ = BeforeSuite(func() {
 	ctx, cancelCluster = context.WithCancel(context.Background())
 	go kubeClient.Cluster.Start(ctx)
 
+	cli := kubeClient.Cluster.GetClient()
 	// wait for creating default namespace
 	Eventually(func(g Gomega) {
 		ns := &corev1.Namespace{}
-		err = kubeClient.Cluster.GetClient().Get(context.Background(), ctrlclient.ObjectKey{Name: "default"}, ns)
+		err = cli.Get(ctx, ctrlclient.ObjectKey{Name: "default"}, ns)
 		g.Expect(err).ShouldNot(HaveOccurred())
 	}).Should(Succeed())
+
+	ns1 := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "admin-ns",
+			Labels: map[string]string{
+				"role": "admin",
+			},
+		},
+	}
+	err = cli.Create(ctx, ns1)
+	Expect(err).ShouldNot(HaveOccurred())
+
+	ns2 := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "user-ns",
+			Labels: map[string]string{
+				"role": "user",
+			},
+		},
+	}
+	err = cli.Create(ctx, ns2)
+	Expect(err).ShouldNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {

@@ -7,49 +7,72 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/zoetrope/kubbernecker/pkg/client"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/cache"
+	toolscache "k8s.io/client-go/tools/cache"
+	cache "sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Watcher struct {
-	logger logr.Logger
-	kube   *client.KubeClient
-	gvk    schema.GroupVersionKind
+	logger      logr.Logger
+	kube        *client.KubeClient
+	gvk         schema.GroupVersionKind
+	nsSelector  labels.Selector
+	resSelector labels.Selector
 
-	startTime  time.Time
+	startTime   time.Time
+	informer    cache.Informer
+	regstration toolscache.ResourceEventHandlerRegistration
+
 	mu         sync.RWMutex
 	statistics Statistics
 }
 
-func NewWatcher(logger logr.Logger, kube *client.KubeClient, resource schema.GroupVersionKind) *Watcher {
+func NewWatcher(logger logr.Logger, kube *client.KubeClient, gvk schema.GroupVersionKind, nsSelector labels.Selector, resSelector labels.Selector) *Watcher {
 	statistics := Statistics{}
-	statistics.GroupVersionKind = resource
+	statistics.GroupVersionKind = metav1.GroupVersionKind{
+		Group:   gvk.Group,
+		Version: gvk.Version,
+		Kind:    gvk.Kind,
+	}
 	statistics.Namespaces = make(map[string]*NamespaceStatistics)
 
 	return &Watcher{
-		logger:     logger,
-		kube:       kube,
-		statistics: statistics,
-		gvk:        resource,
+		logger:      logger,
+		kube:        kube,
+		statistics:  statistics,
+		gvk:         gvk,
+		nsSelector:  nsSelector,
+		resSelector: resSelector,
 	}
 }
 
-func (w *Watcher) printMetadata(event string, obj interface{}) {
+func (w *Watcher) handle(obj interface{}, event string) {
 	meta := obj.(*metav1.PartialObjectMetadata)
+
 	w.logger.V(3).Info("Event", "event", event, "gvk", meta.GroupVersionKind(), "namespace", meta.Namespace, "name", meta.Name)
-	for _, m := range meta.ManagedFields {
-		w.logger.V(5).Info("Manager", "manager", m.Manager, "managedTime", m.Time.Format(time.RFC3339))
-	}
-}
-
-func (w *Watcher) collect(obj interface{}, event string) {
-	meta := obj.(*metav1.PartialObjectMetadata)
-
 	if event == "add" {
 		if meta.CreationTimestamp.Time.Before(w.startTime) {
-			// Ignore add events for resources created before start of watch
+			// Ignore add events for resources created before start of watching
 			w.logger.V(3).Info("Ignore resources created before start of watch", "start", w.startTime, "creation", meta.CreationTimestamp)
+			return
+		}
+	}
+
+	if !w.resSelector.Matches(labels.Set(meta.Labels)) {
+		return
+	}
+	if !w.nsSelector.Empty() && meta.Namespace != "" {
+		ns := &corev1.Namespace{}
+		err := w.kube.Cluster.GetClient().Get(context.TODO(), ctrlclient.ObjectKey{Name: meta.Namespace}, ns)
+		if err != nil {
+			w.logger.Error(err, "failed to get namespace", "namespace", meta.Namespace)
+			return
+		}
+		if !w.nsSelector.Matches(labels.Set(ns.Labels)) {
 			return
 		}
 	}
@@ -88,7 +111,7 @@ func (w *Watcher) Statistics() *Statistics {
 }
 
 func (w *Watcher) Start(ctx context.Context) error {
-	w.logger.Info("start watcher")
+	w.logger.Info("start watcher", "gvk", w.gvk.String(), "nsSelector", w.nsSelector.String(), "resSelector", w.resSelector.String())
 	w.startTime = time.Now()
 
 	meta := &metav1.PartialObjectMetadata{}
@@ -97,20 +120,24 @@ func (w *Watcher) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	w.informer = informer
+
+	reg, err := informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			w.collect(obj, "add")
-			w.printMetadata("add", obj)
+			w.handle(obj, "add")
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			w.collect(newObj, "update")
-			w.printMetadata("update", newObj)
+			w.handle(newObj, "update")
 		},
 		DeleteFunc: func(obj interface{}) {
-			w.collect(obj, "delete")
-			w.printMetadata("delete", obj)
+			w.handle(obj, "delete")
 		},
 	})
+	w.regstration = reg
 
 	return err
+}
+
+func (w *Watcher) Stop() error {
+	return w.informer.RemoveEventHandler(w.regstration)
 }
