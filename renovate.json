@@ -1,6 +1,30 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:base",
+    "github>aquaproj/aqua-renovate-config#1.5.1",
+    ":semanticCommitTypeAll(chore)",
+    ":timezone(Asia/Tokyo)"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "packageRules": [
+    {
+      "description": "Disable major updates for k8s.io/client-go",
+      "enabled": false,
+      "matchDatasources": [
+        "go"
+      ],
+      "matchPackageNames": [
+        "k8s.io/client-go"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ]
+    }
   ]
 }
