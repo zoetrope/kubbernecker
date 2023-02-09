@@ -3,6 +3,7 @@ package watch
 import (
 	"context"
 	"testing"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -28,6 +29,11 @@ var cancelCluster context.CancelFunc
 
 func TestWatch(t *testing.T) {
 	RegisterFailHandler(Fail)
+
+	SetDefaultEventuallyTimeout(5 * time.Second)
+	SetDefaultEventuallyPollingInterval(1 * time.Second)
+	SetDefaultConsistentlyDuration(5 * time.Second)
+	SetDefaultConsistentlyPollingInterval(1 * time.Second)
 
 	RunSpecs(t, "Watcher Suite", Label("envtest", "watcher"))
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -13,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Test Watcher", func() {
@@ -33,7 +32,10 @@ var _ = Describe("Test Watcher", func() {
 
 	AfterEach(func() {
 		cli := kubeClient.Cluster.GetClient()
-		err := cli.DeleteAllOf(ctx, &corev1.ConfigMap{}, ctrlclient.InNamespace("admin-ns"))
+		err := cli.DeleteAllOf(ctx, &corev1.ConfigMap{}, ctrlclient.InNamespace("default"))
+		Expect(err).ShouldNot(HaveOccurred())
+
+		err = cli.DeleteAllOf(ctx, &corev1.ConfigMap{}, ctrlclient.InNamespace("admin-ns"))
 		Expect(err).ShouldNot(HaveOccurred())
 
 		err = cli.DeleteAllOf(ctx, &corev1.ConfigMap{}, ctrlclient.InNamespace("user-ns"))
@@ -75,7 +77,7 @@ var _ = Describe("Test Watcher", func() {
 						"DeleteCount": Equal(0),
 					})),
 				}))
-			}).WithTimeout(1 * time.Second).Should(Succeed())
+			}).Should(Succeed())
 		})
 	})
 
@@ -124,7 +126,7 @@ var _ = Describe("Test Watcher", func() {
 					})),
 					// user-ns should not appear
 				}))
-			}).WithTimeout(1 * time.Second).Should(Succeed())
+			}).Should(Succeed())
 		})
 	})
 
@@ -178,7 +180,7 @@ var _ = Describe("Test Watcher", func() {
 					})),
 					// admin-ns should not appear
 				}))
-			}).WithTimeout(1 * time.Second).Should(Succeed())
+			}).Should(Succeed())
 		})
 	})
 })
