@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  kubbernecker:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2023-02-11T23:38:29.784292946+09:00"
+    description: Helm chart for Kubbernecker
+    digest: 7e8c73b0bdd73ce7df97b536ba131a51c1f5594e4a78062a83619c02dc0dd523
+    home: https://github.com/zoetrope/kubbernecker
+    name: kubbernecker
+    type: application
+    urls:
+    - https://github.com/zoetrope/kubbernecker/releases/download/kubbernecker-chart-0.0.1/kubbernecker-0.0.1.tgz
+    version: 0.0.1
+generated: "2023-02-11T23:38:29.784315859+09:00"
