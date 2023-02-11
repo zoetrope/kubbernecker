@@ -131,6 +131,36 @@ var excludedResources = []schema.GroupVersionKind{
 		Version: "v1",
 		Kind:    "Node",
 	},
+	{
+		Group:   "",
+		Version: "v1",
+		Kind:    "ComponentStatus",
+	},
+	{
+		Group:   "events.k8s.io",
+		Version: "v1",
+		Kind:    "Event",
+	},
+	{
+		Group:   "authentication.k8s.io",
+		Version: "v1",
+		Kind:    "TokenReview",
+	},
+	{
+		Group:   "authorization.k8s.io",
+		Version: "v1",
+		Kind:    "SubjectAccessReview",
+	},
+	{
+		Group:   "authorization.k8s.io",
+		Version: "v1",
+		Kind:    "SelfSubjectAccessReview",
+	},
+	{
+		Group:   "authorization.k8s.io",
+		Version: "v1",
+		Kind:    "SelfSubjectRulesReview",
+	},
 }
 
 func IsExcludedResource(gvk schema.GroupVersionKind) bool {
