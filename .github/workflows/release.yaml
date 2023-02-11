@@ -1,0 +1,38 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+      - name: GHCR Login
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - uses: aquaproj/aqua-installer@v2.0.2
+        with:
+          aqua_version: v1.32.3
+      - name: Set previous release tag for GoReleaser
+        run: |
+          export TAG=$(curl -s "https://api.github.com/repos/zoetrope/kubbernecker/releases/latest" | jq -r .tag_name)
+          echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
+      - name: GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -18,3 +18,52 @@ jobs:
       with:
         aqua_version: v1.33.0
     - run: make test
+  check-goreleaser-config:
+    name: Check goreleaser.yml
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@v4
+        with:
+          version: latest
+          args: check -f .goreleaser.yml
+  tilt:
+    name: Run tilt ci
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - uses: aquaproj/aqua-installer@v2.0.2
+        with:
+          aqua_version: v1.32.3
+      - run: make start-dev
+      - run: tilt ci
+  dry-run:
+    name: Dry-run release
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+      - uses: aquaproj/aqua-installer@v2.0.2
+        with:
+          aqua_version: v1.32.3
+      - name: Setup tag for goreleaser
+        run: |
+          echo "GORELEASER_CURRENT_TAG=$(git describe --tags --abbrev=0 --match "v*" || echo v0.0.0)" >> $GITHUB_ENV
+      - name: GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          version: latest
+          args: --snapshot --skip-publish --rm-dist

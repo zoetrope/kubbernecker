@@ -23,3 +23,4 @@ packages:
 - name: tilt-dev/tilt@v0.31.2
 - name: tilt-dev/ctlptl@v0.8.15
 - name: mikefarah/yq@v4.30.8
+- name: goreleaser/goreleaser@v1.14.1
