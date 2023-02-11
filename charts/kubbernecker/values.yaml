@@ -1,35 +1,16 @@
-config:
-  kubberneckerConfigYaml:
-    namespaceSelector:
-      matchLabels:
-        role: admin
-    targetResources:
-    - group: ""
-      kind: Pod
-      version: v1
-    - group: ""
-      kind: ConfigMap
-      namespaceSelector:
-        matchLabels:
-          role: user
-      version: v1
-    - group: ""
-      kind: Service
-      resourceSelector:
-        matchLabels:
-          role: admin
-      version: v1
+image:
+  repository: ghcr.io/zoetrope/kubbernecker
+  tag: app-version-placeholder
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+replicas: 1
 kubernetesClusterDomain: cluster.local
-manager:
-  manager:
-    image:
-      repository: kubbernecker
-      tag: dev
-    resources:
-      limits:
-        cpu: 500m
-        memory: 128Mi
-      requests:
-        cpu: 10m
-        memory: 64Mi
-  replicas: 1
+config:
+  targetResources: {}
+  namespaceSelector: {}
+  enableClusterResource: false
