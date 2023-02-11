@@ -8,4 +8,4 @@ data:
   kubbernecker-config.yaml: |
     namespaceSelector: {{ .Values.config.namespaceSelector | toYaml | nindent 6 }}
     targetResources: {{ .Values.config.targetResources | toYaml | nindent 6 }}
-    enableClusterResource: {{ .Values.config.enableClusterResource }}
+    enableClusterResources: {{ .Values.config.enableClusterResources }}

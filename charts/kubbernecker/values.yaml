@@ -13,4 +13,4 @@ kubernetesClusterDomain: cluster.local
 config:
   targetResources: {}
   namespaceSelector: {}
-  enableClusterResource: false
+  enableClusterResources: false
