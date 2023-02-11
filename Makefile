@@ -46,6 +46,10 @@ manifests: ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefin
 generate: ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+.PHONY: generate-chart
+generate-chart:
+	kustomize build config/default | helmify charts/kubbernecker
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...

@@ -1,0 +1,39 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "kubbernecker.fullname" . }}-manager-role
+  labels:
+  {{- include "kubbernecker.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - '*'
+  resources:
+  - '*/*'
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubbernecker.fullname" . }}-manager-rolebinding
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kubbernecker
+    app.kubernetes.io/part-of: kubbernecker
+  {{- include "kubbernecker.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "kubbernecker.fullname" . }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "kubbernecker.fullname" . }}-manager'
+  namespace: '{{ .Release.Namespace }}'
