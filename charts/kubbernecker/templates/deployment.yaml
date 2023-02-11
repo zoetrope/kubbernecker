@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
       - args:
-        - --config=/etc/kubbernecker/kubbernecker_config.yaml
+        - --config-file=/etc/kubbernecker/kubbernecker-config.yaml
         command:
         - /kubbernecker
         env:

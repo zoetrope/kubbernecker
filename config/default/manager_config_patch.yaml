@@ -9,7 +9,7 @@ spec:
       containers:
       - name: manager
         args:
-        - "--config=/etc/kubbernecker/kubbernecker_config.yaml"
+        - "--config-file=/etc/kubbernecker/kubbernecker-config.yaml"
         volumeMounts:
         - name: config
           mountPath: /etc/kubbernecker
