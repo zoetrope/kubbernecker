@@ -36,3 +36,52 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  chart-release:
+    runs-on: ubuntu-22.04
+    needs: release
+    if: contains(needs.release.result, 'success')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set chart version
+        run: |
+          helm repo add kubbernecker https://zoetrope.github.io/kubbernecker
+          helm repo update
+          
+          # get the release tag version
+          tag_version=${GITHUB_REF##*/v}
+          
+          # get the latest chart version
+          chart_version=$(helm search repo kubbernecker -o json | jq -r 'sort_by(.version) | .[-1].version')
+          chart_patch_version=${chart_version##*.}
+          new_patch_version=$(($chart_patch_version+1))
+          
+          # if minor or major version changed, reset new patch version
+          local_version=$(cat charts/kubbernecker/Chart.yaml | yq .version | sed "s/0-chart-patch-version-placeholder/$chart_patch_version/g")
+          [ "$local_version" != "$chart_version" ] && new_patch_version=0
+          
+          # replace placeholder with new version
+          sed --in-place "s/app-version-placeholder/$tag_version/g" charts/kubbernecker/Chart.yaml
+          sed --in-place "s/0-chart-patch-version-placeholder/$new_patch_version/g" charts/kubbernecker/Chart.yaml
+          sed --in-place "s/app-version-placeholder/$tag_version/g" charts/kubbernecker/values.yaml
+      - name: Create release notes
+        run: |
+          tag_version=${GITHUB_REF##*/}
+          cat <<EOF > ./charts/kubbernecker/RELEASE.md
+          Helm chart for Kubbernecker [$tag_version](https://github.com/zoetrope/kubbernecker/releases/tag/$tag_version)
+          
+          EOF
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.5.0
+        with:
+          config: cr.yaml
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

@@ -1,0 +1,16 @@
+image:
+  repository: ghcr.io/zoetrope/kubbernecker
+  tag: app-version-placeholder
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+replicas: 1
+kubernetesClusterDomain: cluster.local
+config:
+  targetResources: {}
+  namespaceSelector: {}
+  enableClusterResource: false
