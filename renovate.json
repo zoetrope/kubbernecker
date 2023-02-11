@@ -25,6 +25,15 @@
       "matchUpdateTypes": [
         "major"
       ]
+    },
+    {
+      "automerge": true,
+      "matchPackageNames": [
+        "aquaproj/aqua",
+        "aquaproj/aqua-installer",
+        "aquaproj/aqua-registry",
+        "aquaproj/aqua-renovate-config"
+      ]
     }
   ]
 }
