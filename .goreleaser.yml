@@ -1,0 +1,60 @@
+project_name: kubbernecker
+dist: bin/
+builds:
+  - id: kubbernecker
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/kubbernecker
+    binary: kubbernecker
+    goos:
+      - linux
+    goarch:
+      - amd64
+    ldflags:
+      - -X github.com/zoetrope/kubbernecker.Version={{.Version}}
+  - id: kubectl-rubberneck
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/kubectl-rubberneck
+    binary: kubectl-rubberneck
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -X github.com/zoetrope/kubbernecker.Version={{.Version}}
+    ignore:
+      - goos: windows
+        goarch: arm64
+archives:
+  - builds:
+      - kubectl-rubberneck
+    name_template: "kubectl-{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    wrap_in_directory: false
+    format: tar.gz
+    files:
+      - LICENSE
+    rlcp: true
+dockers:
+  - image_templates:
+      - "ghcr.io/zoetrope/kubbernecker:{{ .Version }}"
+    use: buildx
+    dockerfile: ./Dockerfile
+    ids:
+      - kubbernecker
+    extra_files:
+      - LICENSE
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "dev"
+changelog:
+  use: github-native

@@ -5,6 +5,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/zoetrope/kubbernecker"
+
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 	"k8s.io/klog/v2"
@@ -30,9 +32,10 @@ func NewCmd() *cobra.Command {
 
 	opts := &options{}
 	cmd := &cobra.Command{
-		Use:   "kubbernecker",
-		Short: "kubbernecker",
-		Long:  `kubbernecker`,
+		Use:     "kubbernecker",
+		Short:   "kubbernecker",
+		Long:    `kubbernecker`,
+		Version: kubbernecker.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			cmd.SilenceUsage = true
 		},

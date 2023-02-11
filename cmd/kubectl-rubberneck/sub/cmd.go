@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
+	"github.com/zoetrope/kubbernecker"
 	"github.com/zoetrope/kubbernecker/pkg/cobwrap"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -26,9 +27,10 @@ type rootOpts struct {
 func NewCmd(streams genericclioptions.IOStreams) *cobwrap.Command[*rootOpts] {
 	cmd := &cobwrap.Command[*rootOpts]{
 		Command: &cobra.Command{
-			Use:   "kubectl-rubberneck",
-			Short: "A brief description of your application",
-			Long:  `kubbernecker`,
+			Use:     "kubectl-rubberneck",
+			Short:   "A brief description of your application",
+			Long:    `kubbernecker`,
+			Version: kubbernecker.Version,
 			PersistentPreRun: func(cmd *cobra.Command, args []string) {
 				cmd.SilenceUsage = true
 			},
