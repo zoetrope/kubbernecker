@@ -11,6 +11,6 @@ resources:
 replicas: 1
 kubernetesClusterDomain: cluster.local
 config:
-  targetResources: {}
+  targetResources: []
   namespaceSelector: {}
   enableClusterResources: false
