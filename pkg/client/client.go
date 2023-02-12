@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/utils/pointer"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -57,8 +59,7 @@ func MakeKubeClientFromRestConfig(cfg *rest.Config, namespace string) (*KubeClie
 	c, err := cluster.New(cfg, func(opts *cluster.Options) {
 		opts.Namespace = namespace
 		opts.Scheme = scheme
-		resync := 0 * time.Second
-		opts.SyncPeriod = &resync
+		opts.SyncPeriod = pointer.Duration(0 * time.Second)
 		opts.NewClient = NewCachingClient
 	})
 

@@ -3,6 +3,9 @@ package sub
 import (
 	"fmt"
 	"os"
+	"time"
+
+	"k8s.io/utils/pointer"
 
 	"github.com/spf13/cobra"
 	"github.com/zoetrope/kubbernecker/internal/controller"
@@ -42,6 +45,7 @@ func (o *options) Run(cmd *cobra.Command, args []string) error {
 		LeaderElection:          true,
 		LeaderElectionID:        o.leaderElectionID,
 		LeaderElectionNamespace: o.podNamespace,
+		SyncPeriod:              pointer.Duration(0 * time.Second),
 	})
 	if err != nil {
 		return fmt.Errorf("unable to start manager: %w", err)
