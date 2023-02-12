@@ -1,22 +1,22 @@
 project_name: kubbernecker
 dist: bin/
 builds:
-  - id: kubbernecker
+  - id: kubbernecker-metrics
     env:
       - CGO_ENABLED=0
-    main: ./cmd/kubbernecker
-    binary: kubbernecker
+    main: ./cmd/kubbernecker-metrics
+    binary: kubbernecker-metrics
     goos:
       - linux
     goarch:
       - amd64
     ldflags:
       - -X github.com/zoetrope/kubbernecker.Version={{.Version}}
-  - id: kubectl-rubberneck
+  - id: kubectl-kubbernecker
     env:
       - CGO_ENABLED=0
-    main: ./cmd/kubectl-rubberneck
-    binary: kubectl-rubberneck
+    main: ./cmd/kubectl-kubbernecker
+    binary: kubectl-kubbernecker
     goos:
       - linux
       - windows
@@ -31,7 +31,7 @@ builds:
         goarch: arm64
 archives:
   - builds:
-      - kubectl-rubberneck
+      - kubectl-kubbernecker
     name_template: "kubectl-{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
     wrap_in_directory: false
     format: tar.gz
@@ -44,7 +44,7 @@ dockers:
     use: buildx
     dockerfile: ./Dockerfile
     ids:
-      - kubbernecker
+      - kubbernecker-metrics
     extra_files:
       - LICENSE
     build_flag_templates:
