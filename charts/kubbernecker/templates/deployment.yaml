@@ -53,6 +53,13 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+          - name: health
+            containerPort: 8081
+            protocol: TCP
+          - name: metrics
+            containerPort: 8080
+            protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
