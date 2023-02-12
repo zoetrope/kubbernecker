@@ -1,16 +1,46 @@
+# Default image
 image:
+  # Kubbernecker image repository to use.
   repository: ghcr.io/zoetrope/kubbernecker
+  # Kubbernecker image tag to use.
   tag: app-version-placeholder
+  # imagePullPolicy applied to Kubbernecker image.
+  imagePullPolicy: IfNotPresent
+# Resource limits and requests for Kubbernecker
 resources:
-  limits:
-    cpu: 500m
-    memory: 128Mi
   requests:
-    cpu: 10m
-    memory: 64Mi
-replicas: 1
-kubernetesClusterDomain: cluster.local
+    cpu: 100m
+    memory: 256Mi
+# Kubbernecker configuration
 config:
+  # Target Resources. If this is empty, all resources will be the target.
+  # Specify the resource type to be monitored by `group`, `version` and `kind`.
+  # `namespaceSelector` can select the namespaces to which the resource belongs.
+  # `resourceSelector` can select the target resources by its labels.
   targetResources: []
+  # Example:
+  # - group: ""
+  #   version: "v1"
+  #   kind: "Pod"
+  # - group: "apps"
+  #   version: "v1"
+  #   kind: "Deployment"
+  #   namespaceSelector:
+  #     matchLabels:
+  #       app: "frontend"
+  # - group: "storage.k8s.io"
+  #   version: "v1"
+  #   kind: "StorageClass"
+  #   resourceSelector:
+  #     matchLabels:
+  #       team: "myteam"
+
+  # Selector of the namespace to which the target resource belongs. If this is empty, all namespaces will be the target.
   namespaceSelector: {}
+  # Example:
+  # namespaceSelector:
+  #   matchLabels:
+  #     role: admin
+
+  # If `targetResources` is empty, whether to include cluster-scope resources in the target. If `targetResources` is not empty, this field will be ignored.
   enableClusterResources: false

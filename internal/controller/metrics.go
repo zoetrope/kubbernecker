@@ -9,7 +9,7 @@ var (
 	resourceUpdateCountDesc = prometheus.NewDesc(
 		"kubbernecker_resource_updates_total",
 		"",
-		[]string{"group", "version", "kind", "namespace", "resource", "type"}, nil)
+		[]string{"group", "version", "kind", "namespace", "resource"}, nil)
 	kindUpdateCountDesc = prometheus.NewDesc(
 		"kubbernecker_kind_updates_total",
 		"",
