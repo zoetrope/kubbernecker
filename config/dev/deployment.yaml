@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: manager
+  name: metrics
   namespace: system
 spec:
   template:
@@ -9,7 +9,7 @@ spec:
       securityContext: null
       containers:
         - command:
-            - /kubbernecker
+            - /kubbernecker-metrics
           args: null
           name: manager
           securityContext: null

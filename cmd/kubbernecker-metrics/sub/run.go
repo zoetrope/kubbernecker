@@ -5,14 +5,13 @@ import (
 	"os"
 	"time"
 
-	"k8s.io/utils/pointer"
-
 	"github.com/spf13/cobra"
 	"github.com/zoetrope/kubbernecker/internal/controller"
 	"github.com/zoetrope/kubbernecker/pkg/client"
 	"github.com/zoetrope/kubbernecker/pkg/config"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )

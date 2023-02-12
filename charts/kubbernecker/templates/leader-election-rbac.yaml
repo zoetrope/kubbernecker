@@ -55,5 +55,5 @@ roleRef:
   name: '{{ include "kubbernecker.fullname" . }}-leader-election-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "kubbernecker.fullname" . }}-manager'
+  name: '{{ include "kubbernecker.fullname" . }}-metrics'
   namespace: '{{ .Release.Namespace }}'

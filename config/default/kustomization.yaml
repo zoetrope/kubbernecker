@@ -16,7 +16,7 @@ namePrefix: kubbernecker-
 
 resources:
 - ../rbac
-- ../manager
+- ../deployment
 
 patchesStrategicMerge:
-  - manager_config_patch.yaml
+  - deployment_config_patch.yaml

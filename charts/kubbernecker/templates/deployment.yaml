@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "kubbernecker.fullname" . }}-manager
+  name: {{ include "kubbernecker.fullname" . }}-metrics
   labels:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: kubbernecker
@@ -11,9 +11,9 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "kubbernecker.fullname" . }}-manager
+  name: {{ include "kubbernecker.fullname" . }}-metrics
   labels:
-    app.kubernetes.io/component: manager
+    app.kubernetes.io/component: metrics
     app.kubernetes.io/created-by: kubbernecker
     app.kubernetes.io/part-of: kubbernecker
     control-plane: manager
@@ -36,7 +36,7 @@ spec:
       - args:
         - --config-file=/etc/kubbernecker/kubbernecker-config.yaml
         command:
-        - /kubbernecker
+        - /kubbernecker-metrics
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -77,7 +77,7 @@ spec:
           name: config
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: {{ include "kubbernecker.fullname" . }}-manager
+      serviceAccountName: {{ include "kubbernecker.fullname" . }}-metrics
       terminationGracePeriodSeconds: 10
       volumes:
       - configMap:

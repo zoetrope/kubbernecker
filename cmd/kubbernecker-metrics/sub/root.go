@@ -5,10 +5,9 @@ import (
 	"flag"
 	"os"
 
-	"github.com/zoetrope/kubbernecker"
-
 	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
+	"github.com/zoetrope/kubbernecker"
 	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -27,14 +26,14 @@ type options struct {
 	logger       logr.Logger
 }
 
-// NewCmd creates the root *cobra.Command of `kubectl-rubberneck`.
+// NewCmd creates the root *cobra.Command of `kubbernecker-metrics`.
 func NewCmd() *cobra.Command {
 
 	opts := &options{}
 	cmd := &cobra.Command{
-		Use:     "kubbernecker",
-		Short:   "kubbernecker",
-		Long:    `kubbernecker`,
+		Use:     "kubbernecker-metrics",
+		Short:   "kubbernecker-metrics",
+		Long:    `kubbernecker-metrics`,
 		Version: kubbernecker.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			cmd.SilenceUsage = true

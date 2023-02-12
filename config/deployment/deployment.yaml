@@ -5,7 +5,7 @@ metadata:
     control-plane: manager
     app.kubernetes.io/name: namespace
     app.kubernetes.io/instance: system
-    app.kubernetes.io/component: manager
+    app.kubernetes.io/component: metrics
     app.kubernetes.io/created-by: kubbernecker
     app.kubernetes.io/part-of: kubbernecker
     app.kubernetes.io/managed-by: kustomize
@@ -14,13 +14,13 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: manager
+  name: metrics
   namespace: system
   labels:
     control-plane: manager
     app.kubernetes.io/name: deployment
-    app.kubernetes.io/instance: manager
-    app.kubernetes.io/component: manager
+    app.kubernetes.io/instance: metrics
+    app.kubernetes.io/component: metrics
     app.kubernetes.io/created-by: kubbernecker
     app.kubernetes.io/part-of: kubbernecker
     app.kubernetes.io/managed-by: kustomize
@@ -39,7 +39,7 @@ spec:
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.
       # It is considered best practice to support multiple architectures. You can
-      # build your manager image using the makefile target docker-buildx.
+      # build your kubbernecker image using the makefile target docker-buildx.
       # affinity:
       #   nodeAffinity:
       #     requiredDuringSchedulingIgnoredDuringExecution:
@@ -67,7 +67,7 @@ spec:
         #   type: RuntimeDefault
       containers:
         - command:
-            - /kubbernecker
+            - /kubbernecker-metrics
           args:
             - --leader-elect
           env:
@@ -111,5 +111,5 @@ spec:
             requests:
               cpu: 10m
               memory: 64Mi
-      serviceAccountName: manager
+      serviceAccountName: metrics
       terminationGracePeriodSeconds: 10
