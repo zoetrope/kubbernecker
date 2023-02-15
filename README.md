@@ -17,6 +17,9 @@ It helps to monitor the changes made to resources within a Kubernetes cluster.
 who made the changes.
 It helps to quickly check the changes made to resources within a Kubernetes cluster.
 
+The name of Kubbernecker comes from rubbernecker.
+It is like staring at a fight between Kubernetes controllers.
+
 ## Motivation
 
 In a Kubernetes cluster, different controllers may continuously edit the same resource, leading to a race condition.
@@ -77,10 +80,10 @@ NOTE: In the future, this tool will be able to be installed by [krew](https://kr
 
 ### kubbernecker-metrics
 
-| Name                                  | Type    | Description | Labels                                                                                                        |
-|---------------------------------------|---------|-------------|---------------------------------------------------------------------------------------------------------------|
-| `kubbernecker_resource_updates_total` | counter |             | `group`=group </br> `version`=version </br> `kind`=kind </br> `namespace`=namespace </br> `resource`=resource |
-| `kubbernecker_kind_updates_total`     | counter |             | `group`=group </br> `version`=version </br> `kind`=kind </br> `namespace`=namespace </br> `type`=type         |
+| Name                                  | Type    | Description                                                 | Labels                                                                                                                   |
+|---------------------------------------|---------|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `kubbernecker_resource_events_total`  | counter | Total number of Kubernetes events by resource type.         | `resource_type`: resource type </br> `namespace`: namespace </br> `event_type`: event type ("add", "update" or "delete") |
+| `kubbernecker_resource_updates_total` | counter | Total number of updates for a Kubernetes resource instance. | `resource_type`: resource type </br> `namespace`: namespace </br> `resource_name`: resource name                         |
 
 ### kubectl-kubbernecker
 
@@ -90,9 +93,8 @@ NOTE: In the future, this tool will be able to be installed by [krew](https://kr
 $ kubectl kubbernecker watch --all-resources --all-namespaces
 ```
 
-
 - blame sub-command
- 
+
 ```console
 $ kubectl kubbernecker blame -n default pod nginx
 ```
