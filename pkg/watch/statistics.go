@@ -10,13 +10,12 @@ type Statistics struct {
 }
 
 type NamespaceStatistics struct {
-	Resources   map[string]*ResourceStatistics `json:"resources"`
-	AddCount    int                            `json:"add"`
-	DeleteCount int                            `json:"delete"`
-	UpdateCount int                            `json:"update"`
+	Resources map[string]*ResourceStatistics `json:"resources"`
 }
 
 type ResourceStatistics struct {
+	AddCount    int `json:"add"`
+	DeleteCount int `json:"delete"`
 	UpdateCount int `json:"update"`
 }
 
@@ -31,7 +30,7 @@ func (in *Statistics) DeepCopy() *Statistics {
 
 func (in *Statistics) DeepCopyInto(out *Statistics) {
 	*out = *in
-
+	out.GroupVersionKind = in.GroupVersionKind
 	if in.Namespaces != nil {
 		in, out := &in.Namespaces, &out.Namespaces
 		*out = make(map[string]*NamespaceStatistics, len(*in))
@@ -47,7 +46,6 @@ func (in *Statistics) DeepCopyInto(out *Statistics) {
 			(*out)[key] = outVal
 		}
 	}
-	return
 }
 
 func (in *NamespaceStatistics) DeepCopy() *NamespaceStatistics {
@@ -61,7 +59,6 @@ func (in *NamespaceStatistics) DeepCopy() *NamespaceStatistics {
 
 func (in *NamespaceStatistics) DeepCopyInto(out *NamespaceStatistics) {
 	*out = *in
-
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = make(map[string]*ResourceStatistics, len(*in))
@@ -72,10 +69,9 @@ func (in *NamespaceStatistics) DeepCopyInto(out *NamespaceStatistics) {
 			} else {
 				in, out := &val, &outVal
 				*out = new(ResourceStatistics)
-				*out = *in
+				**out = **in
 			}
 			(*out)[key] = outVal
 		}
 	}
-	return
 }

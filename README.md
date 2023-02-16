@@ -80,10 +80,9 @@ NOTE: In the future, this tool will be able to be installed by [krew](https://kr
 
 ### kubbernecker-metrics
 
-| Name                                  | Type    | Description                                                 | Labels                                                                                                                   |
-|---------------------------------------|---------|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `kubbernecker_resource_events_total`  | counter | Total number of Kubernetes events by resource type.         | `resource_type`: resource type </br> `namespace`: namespace </br> `event_type`: event type ("add", "update" or "delete") |
-| `kubbernecker_resource_updates_total` | counter | Total number of updates for a Kubernetes resource instance. | `resource_type`: resource type </br> `namespace`: namespace </br> `resource_name`: resource name                         |
+| Name                                 | Type    | Description                                      | Labels                                                                                                                                                                                   |
+|--------------------------------------|---------|--------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kubbernecker_resource_events_total` | counter | Total number of events for Kubernetes resources. | `group`: group </br> `version`: version </br> `kind`: kind </br>`namespace`: namespace </br> `event_type`: event type ("add", "update" or "delete") </br> `resource_name`: resource name |
 
 ### kubectl-kubbernecker
 
