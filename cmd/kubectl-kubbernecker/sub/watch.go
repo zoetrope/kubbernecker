@@ -30,9 +30,20 @@ func newWatchCmd() *cobwrap.Command[*watchOptions] {
 
 	cmd := &cobwrap.Command[*watchOptions]{
 		Command: &cobra.Command{
-			Use:   "watch",
-			Short: "",
-			Long:  ``,
+			Use:   "watch (TYPE[.VERSION][.GROUP]...)",
+			Short: "Print the number of times a resource is updated",
+			Long: `Print the number of times a resource is updated.
+
+Examples:
+  # Watch Pod resources in "default" namespace
+  kubectl kubbernecker watch pods -n default
+
+  # Watch Pod resources in all namespaces
+  kubectl kubbernecker watch pods --all-namespaces
+
+  # Watch all resources in all namespaces
+  kubectl kubbernecker watch --all-resources --all-namespaces
+`,
 		},
 		Options: &watchOptions{},
 	}
@@ -55,10 +66,10 @@ func (o *watchOptions) Fill(cmd *cobra.Command, args []string) error {
 	o.resources = args
 
 	if len(o.resources) > 0 && o.allResources {
-		return errors.New("resources and --all-resources cannot be used together")
+		return errors.New("the type of resource and `--all-namespaces` flag cannot be used together")
 	}
 	if len(o.resources) == 0 && !o.allResources {
-		return errors.New("resources or --all-resources is required but not provided")
+		return errors.New("you must specify the type of resource to get or `--all-namespaces` flag")
 	}
 
 	return nil

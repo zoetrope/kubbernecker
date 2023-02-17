@@ -22,44 +22,6 @@ type BlameWatcher struct {
 	statistics BlameStatistics
 }
 
-type ManagerStatistics struct {
-	UpdateCount int
-}
-
-type BlameStatistics struct {
-	Managers     map[string]*ManagerStatistics
-	LatestUpdate time.Time
-}
-
-func (in *BlameStatistics) DeepCopy() *BlameStatistics {
-	if in == nil {
-		return nil
-	}
-	out := new(BlameStatistics)
-	in.DeepCopyInto(out)
-	return out
-}
-
-func (in *BlameStatistics) DeepCopyInto(out *BlameStatistics) {
-	*out = *in
-
-	if in.Managers != nil {
-		in, out := &in.Managers, &out.Managers
-		*out = make(map[string]*ManagerStatistics, len(*in))
-		for key, val := range *in {
-			var outVal *ManagerStatistics
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = new(ManagerStatistics)
-				*out = *in
-			}
-			(*out)[key] = outVal
-		}
-	}
-	return
-}
 func NewBlameWatcher(logger logr.Logger, kube *client.KubeClient, gvk schema.GroupVersionKind, resource string) *BlameWatcher {
 	statistics := BlameStatistics{}
 	statistics.Managers = make(map[string]*ManagerStatistics)

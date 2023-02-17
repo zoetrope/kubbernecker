@@ -23,9 +23,14 @@ func newBlameCmd() *cobwrap.Command[*blameOptions] {
 	cmd := &cobwrap.Command[*blameOptions]{
 		Command: &cobra.Command{
 			Use:   "blame TYPE[.VERSION][.GROUP] NAME",
-			Short: "",
-			Long:  ``,
-			Args:  cobra.ExactArgs(2),
+			Short: "Print the name of managers that updated the given resource",
+			Long: `Print the name of managers that updated the given resource.
+
+Examples:
+  # Print managers that updated "test" ConfigMap resource
+  kubectl kubbernecker blame configmap test
+`,
+			Args: cobra.ExactArgs(2),
 		},
 		Options: &blameOptions{},
 	}

@@ -80,25 +80,72 @@ NOTE: In the future, this tool will be able to be installed by [krew](https://kr
 
 ### kubbernecker-metrics
 
+`kubbernecker-metrics` exposes the following metrics:
+
 | Name                                 | Type    | Description                                      | Labels                                                                                                                                                                                   |
 |--------------------------------------|---------|--------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `kubbernecker_resource_events_total` | counter | Total number of events for Kubernetes resources. | `group`: group </br> `version`: version </br> `kind`: kind </br>`namespace`: namespace </br> `event_type`: event type ("add", "update" or "delete") </br> `resource_name`: resource name |
 
 ### kubectl-kubbernecker
 
-- watch sub-command
+`kubectl-kubbernecker` has two subcommands:
+
+`watch` sub-command prints the number of times a resource is updated.
 
 ```console
-$ kubectl kubbernecker watch --all-resources --all-namespaces
+$ kubectl kubbernecker watch -n default configmap
+{
+  "gvk": {
+    "group": "",
+    "version": "v1",
+    "kind": "ConfigMap"
+  },
+  "namespaces": {
+    "default": {
+      "resources": {
+        "test-cm": {
+          "add": 0,
+          "delete": 0,
+          "update": 9
+        }
+      }
+    }
+  }
+}
 ```
 
-- blame sub-command
+`blame` sub-command prints the name of managers that updated the given resource.
 
 ```console
-$ kubectl kubbernecker blame -n default pod nginx
+$ kubectl kubbernecker blame -n default configmap test-cm
+{
+  "managers": {
+    "manager1": {
+      "update": 4
+    },
+    "manager2": {
+      "update": 4
+    }
+  },
+  "lastUpdate": "2023-02-17T22:25:20+09:00"
+}
 ```
 
 ## Development
+
+Tools for developing kubbernecker are managed by aqua.
+Please install aqua as described in the following page:
+
+https://aquaproj.github.io/docs/reference/install
+
+Then install the tools.
+
+```console
+$ cd /path/to/kubbernecker
+$ aqua i -l
+```
+
+You can start development with tilt.
 
 ```console
 $ make start-dev

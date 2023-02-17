@@ -1,6 +1,8 @@
 package watch
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -74,4 +76,43 @@ func (in *NamespaceStatistics) DeepCopyInto(out *NamespaceStatistics) {
 			(*out)[key] = outVal
 		}
 	}
+}
+
+type ManagerStatistics struct {
+	UpdateCount int `json:"update"`
+}
+
+type BlameStatistics struct {
+	Managers     map[string]*ManagerStatistics `json:"managers"`
+	LatestUpdate time.Time                     `json:"lastUpdate"`
+}
+
+func (in *BlameStatistics) DeepCopy() *BlameStatistics {
+	if in == nil {
+		return nil
+	}
+	out := new(BlameStatistics)
+	in.DeepCopyInto(out)
+	return out
+}
+
+func (in *BlameStatistics) DeepCopyInto(out *BlameStatistics) {
+	*out = *in
+
+	if in.Managers != nil {
+		in, out := &in.Managers, &out.Managers
+		*out = make(map[string]*ManagerStatistics, len(*in))
+		for key, val := range *in {
+			var outVal *ManagerStatistics
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new(ManagerStatistics)
+				*out = *in
+			}
+			(*out)[key] = outVal
+		}
+	}
+	return
 }
