@@ -2,6 +2,17 @@ apiVersion: v1
 entries:
   kubbernecker:
   - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2023-02-17T14:42:06.972544494Z"
+    description: Helm chart for Kubbernecker
+    digest: fc82eef1cce864efa53b9e20e740ee003100f049abe8ae57a881bae1d452b57e
+    home: https://github.com/zoetrope/kubbernecker
+    name: kubbernecker
+    type: application
+    urls:
+    - https://github.com/zoetrope/kubbernecker/releases/download/kubbernecker-chart-0.0.3/kubbernecker-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
     appVersion: 0.0.2
     created: "2023-02-12T02:00:25.958643676Z"
     description: Helm chart for Kubbernecker
@@ -23,4 +34,4 @@ entries:
     urls:
     - https://github.com/zoetrope/kubbernecker/releases/download/kubbernecker-chart-0.0.1/kubbernecker-0.0.1.tgz
     version: 0.0.1
-generated: "2023-02-12T02:00:25.958650776Z"
+generated: "2023-02-17T14:42:06.972558795Z"
