@@ -23,9 +23,9 @@ type Watcher struct {
 	nsSelector  labels.Selector
 	resSelector labels.Selector
 
-	startTime   time.Time
-	informer    cache.Informer
-	regstration toolscache.ResourceEventHandlerRegistration
+	startTime    time.Time
+	informer     cache.Informer
+	registration toolscache.ResourceEventHandlerRegistration
 
 	mu         sync.RWMutex
 	statistics Statistics
@@ -94,12 +94,11 @@ func (w *Watcher) handle(obj interface{}, event string) {
 
 	switch event {
 	case "add":
-		info.AddCount += 1
+		resInfo.AddCount += 1
 	case "update":
-		info.UpdateCount += 1
 		resInfo.UpdateCount += 1
 	case "delete":
-		info.DeleteCount += 1
+		resInfo.DeleteCount += 1
 	}
 }
 
@@ -133,11 +132,11 @@ func (w *Watcher) Start(ctx context.Context) error {
 			w.handle(obj, "delete")
 		},
 	})
-	w.regstration = reg
+	w.registration = reg
 
 	return err
 }
 
 func (w *Watcher) Stop() error {
-	return w.informer.RemoveEventHandler(w.regstration)
+	return w.informer.RemoveEventHandler(w.registration)
 }

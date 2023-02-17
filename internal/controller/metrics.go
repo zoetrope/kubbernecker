@@ -6,49 +6,38 @@ import (
 )
 
 var (
-	resourceUpdateCountDesc = prometheus.NewDesc(
-		"kubbernecker_resource_updates_total",
-		"",
-		[]string{"group", "version", "kind", "namespace", "resource", "type"}, nil)
-	kindUpdateCountDesc = prometheus.NewDesc(
-		"kubbernecker_kind_updates_total",
-		"",
-		[]string{"group", "version", "kind", "namespace", "type"}, nil)
+	resourceEventsCountDesc = prometheus.NewDesc(
+		"kubbernecker_resource_events_total",
+		"Total number of events for Kubernetes resources",
+		[]string{"group", "version", "kind", "namespace", "event_type", "resource_name"}, nil)
 )
 
 func (m *WatcherManager) Describe(ch chan<- *prometheus.Desc) {
-	ch <- resourceUpdateCountDesc
-	ch <- kindUpdateCountDesc
+	ch <- resourceEventsCountDesc
 }
 
 func (m *WatcherManager) Collect(ch chan<- prometheus.Metric) {
 	for _, watcher := range m.watchers {
 		statistics := watcher.Statistics()
 		for ns, nsStatistics := range statistics.Namespaces {
-			ch <- prometheus.MustNewConstMetric(
-				kindUpdateCountDesc,
-				prometheus.CounterValue,
-				float64(nsStatistics.AddCount),
-				statistics.GroupVersionKind.Group, statistics.GroupVersionKind.Version, statistics.GroupVersionKind.Kind, ns, "add",
-			)
-			ch <- prometheus.MustNewConstMetric(
-				kindUpdateCountDesc,
-				prometheus.CounterValue,
-				float64(nsStatistics.UpdateCount),
-				statistics.GroupVersionKind.Group, statistics.GroupVersionKind.Version, statistics.GroupVersionKind.Kind, ns, "update",
-			)
-			ch <- prometheus.MustNewConstMetric(
-				kindUpdateCountDesc,
-				prometheus.CounterValue,
-				float64(nsStatistics.DeleteCount),
-				statistics.GroupVersionKind.Group, statistics.GroupVersionKind.Version, statistics.GroupVersionKind.Kind, ns, "delete",
-			)
 			for res, resStatistics := range nsStatistics.Resources {
 				ch <- prometheus.MustNewConstMetric(
-					resourceUpdateCountDesc,
+					resourceEventsCountDesc,
 					prometheus.CounterValue,
 					float64(resStatistics.UpdateCount),
-					statistics.GroupVersionKind.Group, statistics.GroupVersionKind.Version, statistics.GroupVersionKind.Kind, ns, res, "update",
+					statistics.GroupVersionKind.Group, statistics.GroupVersionKind.Version, statistics.GroupVersionKind.Kind, ns, "update", res,
+				)
+				ch <- prometheus.MustNewConstMetric(
+					resourceEventsCountDesc,
+					prometheus.CounterValue,
+					float64(resStatistics.AddCount),
+					statistics.GroupVersionKind.Group, statistics.GroupVersionKind.Version, statistics.GroupVersionKind.Kind, ns, "add", res,
+				)
+				ch <- prometheus.MustNewConstMetric(
+					resourceEventsCountDesc,
+					prometheus.CounterValue,
+					float64(resStatistics.DeleteCount),
+					statistics.GroupVersionKind.Group, statistics.GroupVersionKind.Version, statistics.GroupVersionKind.Kind, ns, "delete", res,
 				)
 			}
 		}

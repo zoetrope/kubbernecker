@@ -1,78 +1,155 @@
-# kubbernecker
-// TODO(user): Add simple overview of use/purpose
+[![GitHub release](https://img.shields.io/github/release/zoetrope/kubbernecker.svg?maxAge=60)](https://github.com/zoetrope/kubbernecker/releases)
+[![CI](https://github.com/zoetrope/kubbernecker/actions/workflows/ci.yaml/badge.svg)](https://github.com/zoetrope/kubbernecker/actions/workflows/ci.yaml)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/zoetrope/kubbernecker?tab=overview)](https://pkg.go.dev/github.com/zoetrope/kubbernecker?tab=overview)
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+# Kubbernecker
 
-## Getting Started
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+**Project Status**: Alpha
 
-### Running on the cluster
-1. Install Instances of Custom Resources:
+Kubbernecker is tools that helps to check the number of changes made to Kubernetes resources.
+It provides two tools: `kubbernecker-metrics` and `kubectl-kubbernecker`.
 
-```sh
-kubectl apply -f config/samples/
+`kubbernecker-metrics` is an exporter that exposes the number of changes made to Kubernetes resources as Prometheus
+metrics.
+It helps to monitor the changes made to resources within a Kubernetes cluster.
+
+`kubectl-kubbernecker` is a kubectl plugin that shows the number of changes made to Kubernetes resources and the manager
+who made the changes.
+It helps to quickly check the changes made to resources within a Kubernetes cluster.
+
+The name of Kubbernecker comes from rubbernecker.
+It is like staring at a fight between Kubernetes controllers.
+
+## Motivation
+
+In a Kubernetes cluster, different controllers may continuously edit the same resource, leading to a race condition.
+It can cause increased loads on kube-apiserver and performance issues.
+Kubbernecker helps to solve these problems by checking the number of changes made to Kubernetes resources.
+
+## Installation
+
+### kubbernecker-metrics
+
+You need to add this repository to your Helm repositories:
+
+```console
+$ helm repo add kubbernecker https://zoetrope.github.io/kubbernecker/
+$ helm repo update
 ```
 
-2. Build and push your image to the location specified by `IMG`:
+To install the chart with the release name `kubbernecker` using a dedicated namespace(recommended):
 
-```sh
-make docker-build docker-push IMG=<some-registry>/kubbernecker:tag
+```
+$ helm install --create-namespace --namespace kubbernecker kubbernecker kubbernecker/kubbernecker
 ```
 
-3. Deploy the controller to the cluster with the image specified by `IMG`:
+Specify parameters using `--set key=value[,key=value]` argument to `helm install`.
+Alternatively a YAML file that specifies the values for the parameters can be provided like this:
 
-```sh
-make deploy IMG=<some-registry>/kubbernecker:tag
+```console
+$ helm install --create-namespace --namespace kubbernecker kubbernecker -f values.yaml kubbernecker/kubbernecker
 ```
 
-### Uninstall CRDs
-To delete the CRDs from the cluster:
+Values:
 
-```sh
-make uninstall
+| Key                           | Type   | Default                                       | Description                                                                                                                                             |
+|-------------------------------|--------|-----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| image.repository              | string | `"ghcr.io/zoetrope/kubbernecker"`             | Kubbernecker image repository to use.                                                                                                                   |
+| image.tag                     | string | `{{ .Chart.AppVersion }}`                     | Kubbernecker image tag to use.                                                                                                                          |
+| image.imagePullPolicy         | string | `IfNotPresent`                                | imagePullPolicy applied to Kubbernecker image.                                                                                                          |
+| resources                     | object | `{"requests":{"cpu":"100m","memory":"20Mi"}}` | Specify resources.                                                                                                                                      |
+| config.targetResources        | list   | `[]` (See [values.yaml])                      | Target Resources. If this is empty, all resources will be the target.                                                                                   |
+| config.namespaceSelector      | list   | `{}` (See [values.yaml])                      | Selector of the namespace to which the target resource belongs. If this is empty, all namespaces will be the target.                                    |
+| config.enableClusterResources | bool   | `false`                                       | If `targetResources` is empty, whether to include cluster-scope resources in the target. If `targetResources` is not empty, this field will be ignored. |
+
+### kubectl-kubbernecker
+
+Download the binary and put it in a directory of your `PATH`.
+The following is an example to install the plugin in `/usr/local/bin`.
+
+```console
+$ OS=$(go env GOOS)
+$ ARCH=$(go env GOARCH)
+$ curl -L -sS https://github.com/zoetrope/kubbernecker/releases/latest/download/kubectl-kubbernecker_${OS}-${ARCH}.tar.gz \
+  | tar xz -C /usr/local/bin kubectl-kubbernecker
 ```
 
-### Undeploy controller
-UnDeploy the controller from the cluster:
+NOTE: In the future, this tool will be able to be installed by [krew](https://krew.sigs.k8s.io).
 
-```sh
-make undeploy
+## Usage
+
+### kubbernecker-metrics
+
+`kubbernecker-metrics` exposes the following metrics:
+
+| Name                                 | Type    | Description                                      | Labels                                                                                                                                                                                   |
+|--------------------------------------|---------|--------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kubbernecker_resource_events_total` | counter | Total number of events for Kubernetes resources. | `group`: group </br> `version`: version </br> `kind`: kind </br>`namespace`: namespace </br> `event_type`: event type ("add", "update" or "delete") </br> `resource_name`: resource name |
+
+### kubectl-kubbernecker
+
+`kubectl-kubbernecker` has two subcommands:
+
+`watch` sub-command prints the number of times a resource is updated.
+
+```console
+$ kubectl kubbernecker watch -n default configmap
+{
+  "gvk": {
+    "group": "",
+    "version": "v1",
+    "kind": "ConfigMap"
+  },
+  "namespaces": {
+    "default": {
+      "resources": {
+        "test-cm": {
+          "add": 0,
+          "delete": 0,
+          "update": 9
+        }
+      }
+    }
+  }
+}
 ```
 
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
+`blame` sub-command prints the name of managers that updated the given resource.
 
-### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
-
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
-which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
-
-### Test It Out
-1. Install the CRDs into the cluster:
-
-```sh
-make install
+```console
+$ kubectl kubbernecker blame -n default configmap test-cm
+{
+  "managers": {
+    "manager1": {
+      "update": 4
+    },
+    "manager2": {
+      "update": 4
+    }
+  },
+  "lastUpdate": "2023-02-17T22:25:20+09:00"
+}
 ```
 
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
+## Development
 
-```sh
-make run
+Tools for developing kubbernecker are managed by aqua.
+Please install aqua as described in the following page:
+
+https://aquaproj.github.io/docs/reference/install
+
+Then install the tools.
+
+```console
+$ cd /path/to/kubbernecker
+$ aqua i -l
 ```
 
-**NOTE:** You can also run this in one step by running: `make install run`
+You can start development with tilt.
 
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
-
-```sh
-make manifests
+```console
+$ make start-dev
+$ tilt up
 ```
 
-**NOTE:** Run `make --help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
+[values.yaml]: ./charts/kubbernecker/values.yaml

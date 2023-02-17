@@ -32,7 +32,7 @@ builds:
 archives:
   - builds:
       - kubectl-kubbernecker
-    name_template: "kubectl-{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    name_template: "kubectl-{{ .ProjectName }}_{{ .Os }}-{{ .Arch }}"
     wrap_in_directory: false
     format: tar.gz
     files:
