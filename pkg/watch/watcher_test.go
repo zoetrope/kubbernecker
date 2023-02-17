@@ -72,7 +72,7 @@ var _ = Describe("Test Watcher", func() {
 			err := kubeClient.Cluster.GetClient().Create(ctx, cm)
 			Expect(err).NotTo(HaveOccurred())
 
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) {
 				statistics := watcher.Statistics()
 				g.Expect(statistics.Namespaces).Should(MatchAllKeys(Keys{
 					"default": PointTo(MatchAllFields(Fields{
@@ -95,19 +95,8 @@ var _ = Describe("Test Watcher", func() {
 		})
 
 		It("should only count configmap in admin-ns", func() {
-			cm1 := &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "admin-ns",
-					Name:      "test1",
-				},
-				Data: map[string]string{
-					"sample": "data",
-				},
-			}
-			err := kubeClient.Cluster.GetClient().Create(ctx, cm1)
-			Expect(err).NotTo(HaveOccurred())
 
-			cm2 := &corev1.ConfigMap{
+			cm1 := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "user-ns",
 					Name:      "test2",
@@ -116,10 +105,21 @@ var _ = Describe("Test Watcher", func() {
 					"sample": "data",
 				},
 			}
+			err := kubeClient.Cluster.GetClient().Create(ctx, cm1)
+			Expect(err).NotTo(HaveOccurred())
+			cm2 := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "admin-ns",
+					Name:      "test1",
+				},
+				Data: map[string]string{
+					"sample": "data",
+				},
+			}
 			err = kubeClient.Cluster.GetClient().Create(ctx, cm2)
 			Expect(err).NotTo(HaveOccurred())
 
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) {
 				statistics := watcher.Statistics()
 				g.Expect(statistics.Namespaces).Should(MatchAllKeys(Keys{
 					"admin-ns": PointTo(MatchAllFields(Fields{
@@ -172,7 +172,7 @@ var _ = Describe("Test Watcher", func() {
 			err = kubeClient.Cluster.GetClient().Create(ctx, cm2)
 			Expect(err).NotTo(HaveOccurred())
 
-			Consistently(func(g Gomega) {
+			Eventually(func(g Gomega) {
 				statistics := watcher.Statistics()
 				g.Expect(statistics.Namespaces).Should(MatchAllKeys(Keys{
 					"user-ns": PointTo(MatchAllFields(Fields{
