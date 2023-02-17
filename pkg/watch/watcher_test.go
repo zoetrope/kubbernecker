@@ -41,6 +41,15 @@ var _ = Describe("Test Watcher", func() {
 		err = cli.DeleteAllOf(ctx, &corev1.ConfigMap{}, ctrlclient.InNamespace("user-ns"))
 		Expect(err).ShouldNot(HaveOccurred())
 
+		Eventually(func(g Gomega) {
+			for _, ns := range []string{"default", "admin-ns", "user-ns"} {
+				cms := &corev1.ConfigMapList{}
+				err = cli.List(ctx, cms, ctrlclient.InNamespace(ns))
+				g.Expect(err).ShouldNot(HaveOccurred())
+				g.Expect(cms.Items).Should(HaveLen(0))
+			}
+		}).Should(Succeed())
+
 		err = watcher.Stop()
 		Expect(err).ShouldNot(HaveOccurred())
 	})
@@ -69,12 +78,11 @@ var _ = Describe("Test Watcher", func() {
 					"default": PointTo(MatchAllFields(Fields{
 						"Resources": MatchAllKeys(Keys{
 							"test": PointTo(MatchAllFields(Fields{
+								"AddCount":    Equal(1),
 								"UpdateCount": Equal(0),
+								"DeleteCount": Equal(0),
 							})),
 						}),
-						"AddCount":    Equal(1),
-						"UpdateCount": Equal(0),
-						"DeleteCount": Equal(0),
 					})),
 				}))
 			}).Should(Succeed())
@@ -117,12 +125,11 @@ var _ = Describe("Test Watcher", func() {
 					"admin-ns": PointTo(MatchAllFields(Fields{
 						"Resources": MatchAllKeys(Keys{
 							"test1": PointTo(MatchAllFields(Fields{
+								"AddCount":    Equal(1),
 								"UpdateCount": Equal(0),
+								"DeleteCount": Equal(0),
 							})),
 						}),
-						"AddCount":    Equal(1),
-						"UpdateCount": Equal(0),
-						"DeleteCount": Equal(0),
 					})),
 					// user-ns should not appear
 				}))
@@ -171,12 +178,11 @@ var _ = Describe("Test Watcher", func() {
 					"user-ns": PointTo(MatchAllFields(Fields{
 						"Resources": MatchAllKeys(Keys{
 							"test2": PointTo(MatchAllFields(Fields{
+								"AddCount":    Equal(1),
 								"UpdateCount": Equal(0),
+								"DeleteCount": Equal(0),
 							})),
 						}),
-						"AddCount":    Equal(1),
-						"UpdateCount": Equal(0),
-						"DeleteCount": Equal(0),
 					})),
 					// admin-ns should not appear
 				}))
