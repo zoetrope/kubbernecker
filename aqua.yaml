@@ -15,7 +15,7 @@ registries:
   path: registry.yaml
 packages:
 - name: kubernetes-sigs/controller-tools/controller-gen@v0.11.3
-- name: onsi/ginkgo@v2.8.2
+- name: onsi/ginkgo@v2.8.3
   registry: local
 - name: kubernetes/kubectl@v1.26.1
 - name: kubernetes-sigs/kustomize@kustomize/v4.5.7
