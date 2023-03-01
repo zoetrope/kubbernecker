@@ -16,7 +16,7 @@ jobs:
         cache: true
     - uses: aquaproj/aqua-installer@v2.0.2
       with:
-        aqua_version: v1.34.0
+        aqua_version: v1.34.1
     - run: make test
   check-goreleaser-config:
     name: Check goreleaser.yml
@@ -40,7 +40,7 @@ jobs:
           go-version-file: go.mod
       - uses: aquaproj/aqua-installer@v2.0.2
         with:
-          aqua_version: v1.34.0
+          aqua_version: v1.34.1
       - run: make start-dev
       - run: tilt ci
   dry-run:
@@ -58,7 +58,7 @@ jobs:
           go-version-file: go.mod
       - uses: aquaproj/aqua-installer@v2.0.2
         with:
-          aqua_version: v1.34.0
+          aqua_version: v1.34.1
       - name: Setup tag for goreleaser
         run: |
           echo "GORELEASER_CURRENT_TAG=$(git describe --tags --abbrev=0 --match "v*" || echo v0.0.0)" >> $GITHUB_ENV
