@@ -24,4 +24,4 @@ packages:
 - name: tilt-dev/ctlptl@v0.8.15
 - name: mikefarah/yq@v4.31.1
 - name: goreleaser/goreleaser@v1.15.2
-- name: arttor/helmify@v0.3.25
+- name: arttor/helmify@v0.4.14
