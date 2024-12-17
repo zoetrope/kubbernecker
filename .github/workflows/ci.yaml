@@ -14,7 +14,7 @@ jobs:
       with:
         go-version-file: go.mod
         cache: true
-    - uses: aquaproj/aqua-installer@v2.0.2
+    - uses: aquaproj/aqua-installer@v2.3.2
       with:
         aqua_version: v2.2.1
     - run: make test
@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version-file: go.mod
-      - uses: aquaproj/aqua-installer@v2.0.2
+      - uses: aquaproj/aqua-installer@v2.3.2
         with:
           aqua_version: v2.2.1
       - run: make start-dev
@@ -56,7 +56,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version-file: go.mod
-      - uses: aquaproj/aqua-installer@v2.0.2
+      - uses: aquaproj/aqua-installer@v2.3.2
         with:
           aqua_version: v2.2.1
       - name: Setup tag for goreleaser
