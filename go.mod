@@ -1,6 +1,6 @@
 module github.com/zoetrope/kubbernecker
 
-go 1.19
+go 1.23
 
 require (
 	github.com/go-logr/logr v1.2.3
@@ -15,7 +15,7 @@ require (
 	k8s.io/cli-runtime v0.26.3
 	k8s.io/client-go v0.26.3
 	k8s.io/klog/v2 v2.90.0
-	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
+	k8s.io/utils v0.0.0-20260507154919-ff6756f316d2
 	sigs.k8s.io/controller-runtime v0.14.4
 	sigs.k8s.io/yaml v1.3.0
 )
